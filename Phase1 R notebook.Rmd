@@ -11,7 +11,7 @@ data<-read.csv("./Documents/GitHub/Stroke-Prediction/Dataset/healthcare-dataset-
 
 Genral info about the dataset:
 Among the 5110 objects in our dataset sample, 12 attributes are used to describe them. Our characteristics' values are utilized to identify their types, such as the nominal for id, binary for gender, and numeric for age.
-Additionally, we had two attributes for hypertension and heart disease that took two values 1 and 0 to indicate whether they are sufferd from it or not, respectively. The last attribute, "stroke", was described by two values 0 and 1 for the possibility of having a stroke or not as a result of analysis of the previous data.
+Additionally, we had two attributes for hypertension and heart disease that took two values 1 and 0 to indicate whether they are sufferd from it or not, respectively. The last attribute, "stroke", was described by two values 0 and 1 for the possibility of having a stroke or not as a result of analysis of the previous data, which is what we aim to train our model to predict.
 
 Column name and description:
 
