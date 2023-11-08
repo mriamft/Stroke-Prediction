@@ -1,7 +1,7 @@
 
 
 ```{r}
-data<-read.csv("/Dataset/healthcare-dataset-stroke-data.csv")
+data<-read.csv("Dataset/healthcare-dataset-stroke-data.csv")
 ```
 
 ```{r}
