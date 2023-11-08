@@ -509,39 +509,6 @@ print(results)
 
 
 
-```
-
-
-
-
-
-
-
-
-
-
-data$age= cut(data$age, breaks= seq(0,82, by=40),right=TRUE)
-data$avg_glucose_level	= cut(data$avg_glucose_level, breaks= seq(0,1, by=0.5),right=TRUE)
-data$bmi	= cut(data$bmi, breaks= seq(0,1, by=0.5),right=TRUE)
-## convert stroke to factor(to use scaling)
-data$stroke <- as.factor(data$stroke)
-data$hypertension <- as.factor(data$hypertension)
-data$heart_disease <- as.factor(data$heart_disease)
-data$ever_married <- as.factor(data$ever_married)
-data$work_type <- as.factor(data$work_type)
-data$smoking_status <- as.factor(data$smoking_status)
-
-
-
-
-data$age<- as.factor(data$age )
-data$hypertension <- as.factor(data$hypertension )
-data$heart_disease <- as.factor(data$heart_disease )
-data$ever_married   <- as.factor(data$ever_married  )
-data$work_type   <- as.factor(data$work_type  )
-data$smoking_status <- as.factor(data$smoking_status )
-data$bmi <- as.factor(data$bmi )
-data$avg_glucose_level <- as.factor(data$avg_glucose_level)
 
 
 
