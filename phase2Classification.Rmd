@@ -110,7 +110,81 @@ myFormula <- stroke ~ age + hypertension +ever_married+avg_glucose_level
   Using the gain ratio in a decision tree, the algorithm compares the gain ratios of different features and   selects the feature with the highest ratio as the best split. This approach helps prevent bias towards     features with a large number of values or categories.
 
 
-  1-partition the data into ( 85% training, 15% testing):
+
+ 1-partition the data into ( 70% training, 30% testing):
+```{r}
+#splitting 70% of data for training, 30% of data for testing
+library('C50')
+set.seed(1234)
+ind=sample (2, nrow(data), replace=TRUE, prob=c(0.70 , 0.30))
+trainData=data[ind==1,]
+testData=data[ind==2,]
+
+#train using the trainData and create the c5.0 gain ratio tree
+strokeTree <- C5.0(myFormula, data=trainData)
+summary(strokeTree)
+plot(strokeTree)
+```
+
+```{r}
+#make predictions using the c5.0 gain ratio tree on the test data
+testPred <- predict(strokeTree, newdata = testData)
+table(testPred, testData$stroke)
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+
+
+  2-partition the data into ( 80% training, 20% testing):
+```{r}
+#splitting 80% of data for training, 20% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data), replace=TRUE, prob=c(0.80 , 0.20))
+trainData=data[ind==1,]
+testData=data[ind==2,]
+
+#train using the trainData and create the c5.0 gain ratio tree
+strokeTree <- C5.0(myFormula, data=trainData)
+summary(strokeTree)
+plot(strokeTree)
+```
+
+```{r}
+#make predictions using the c5.0 gain ratio tree on the test data
+testPred <- predict(strokeTree, newdata = testData)
+table(testPred, testData$stroke)
+```
+
+```{r}
+#create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+
+
+  3-partition the data into ( 85% training, 15% testing):
 ```{r}
 #splitting 85% of data for training, 15% of data for testing
 trctrl <- trainControl(method = "cv", number = 10, savePredictions=TRUE)
@@ -120,7 +194,6 @@ trainData=data[ind==1,]
 testData=data[ind==2,]
 
 #train using the trainData and create the c5.0 gain ratio tree
-library('C50')
 strokeTree <- C5.0(myFormula, data=trainData,)
 summary(strokeTree)
 plot(strokeTree)
@@ -150,79 +223,6 @@ print(results)
 
 
 
-  2-partition the data into ( 80% training, 20% testing):
-```{r}
-#splitting 80% of data for training, 20% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data), replace=TRUE, prob=c(0.80 , 0.20))
-trainData=data[ind==1,]
-testData=data[ind==2,]
-
-#train using the trainData and create the c5.0 gain ratio tree
-strokeTree <- C5.0(myFormula, data=trainData)
-summary(strokeTree)
-plot(strokeTree)
-```
-
-```{r}
-#make predictions using the c5.0 gain ratio tree on the test data
-testPred <- predict(strokeTree, newdata = testData)
-table(testPred, testData$stroke)
-```
-
-```{r}
-#create confusion matrix to evaluate the model's performance
-library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
-acc <- results$overall["Accuracy"]*100
-acc
-results
-as.table(results)
-as.matrix(results)
-as.matrix(results, what = "overall")
-as.matrix(results, what = "classes")
-print(results)
-```
-
-
-
-  3-partition the data into ( 70% training, 30% testing):
-```{r}
-#splitting 70% of data for training, 30% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data), replace=TRUE, prob=c(0.70 , 0.30))
-trainData=data[ind==1,]
-testData=data[ind==2,]
-
-#train using the trainData and create the c5.0 gain ratio tree
-strokeTree <- C5.0(myFormula, data=trainData)
-summary(strokeTree)
-plot(strokeTree)
-```
-
-```{r}
-#make predictions using the c5.0 gain ratio tree on the test data
-testPred <- predict(strokeTree, newdata = testData)
-table(testPred, testData$stroke)
-```
-
-```{r}
-##create confusion matrix to evaluate the model's performance
-library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
-acc <- results$overall["Accuracy"]*100
-acc
-results
-as.table(results)
-as.matrix(results)
-as.matrix(results, what = "overall")
-as.matrix(results, what = "classes")
-print(results)
-```
-
-
-
-
 
 
 -Information gain (ctree)
@@ -235,6 +235,22 @@ print(results)
   By selecting features with high information gain, the decision tree algorithm aims to create subsets that are more homogeneous or pure in terms of the class labels. This allows for better classification or prediction within each subset.
   
   
+  
+  This method requires the continuous valued attributes to be discritized, so we will discretize age,        avg_glucose_level, and bmi. The method doesn't accept char values, so we will change hypertension, heart_disease, ever_married, work_type, and smoking_status:
+```{r}
+set.seed(123)
+library('MASS')
+data$age= cut(data$age, breaks= seq(0,90, by=40),right=TRUE)
+data$avg_glucose_level	= cut(data$avg_glucose_level, breaks= seq(0,1, by=0.5),right=TRUE)
+data$bmi	= cut(data$bmi, breaks= seq(0,1, by=0.5),right=TRUE)
+data$hypertension <- as.factor(data$hypertension )
+data$heart_disease <- as.factor(data$heart_disease )
+data$ever_married   <- as.factor(data$ever_married  )
+data$work_type   <- as.factor(data$work_type  )
+data$smoking_status <- as.factor(data$smoking_status )
+```
+
+
   1-partition the data into ( 70% training, 30% testing):
 ```{r}
 #splitting 70% of data for training, 30% of data for testing
@@ -254,9 +270,10 @@ plot(stroke_ctree)
 ```
 
 ```{r}
-#make predictions using the rpart gini index tree on the test data
-testPred <- predict(tree, newdata = testData,type = 'class')
+#make predictions using the ctree information gain tree on the test data
+testPred <- predict(stroke_ctree, newdata = testData)
 table(testPred, testData$stroke)
+
 ```
 
 ```{r}
@@ -294,8 +311,8 @@ plot(stroke_ctree)
 ```
 
 ```{r}
-#make predictions using the rpart gini index tree on the test data
-testPred <- predict(tree, newdata = testData,type = 'class')
+#make predictions using the ctree information gain tree on the test data
+testPred <- predict(stroke_ctree, newdata = testData)
 table(testPred, testData$stroke)
 ```
 
