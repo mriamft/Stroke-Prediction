@@ -139,13 +139,12 @@ plot(strokeTree)
 ```{r}
 #make predictions using the c5.0 gain ratio tree on the test data
 testPred <- predict(strokeTree, newdata = testData)
-table(testPred, testData$stroke)
 ```
 
 ```{r}
-##create confusion matrix to evaluate the model's performance
+#create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -153,6 +152,7 @@ as.table(results)
 as.matrix(results)
 as.matrix(results, what = "overall")
 as.matrix(results, what = "classes")
+print(results)
 ```
 
 2-partition the data into ( 80% training, 20% testing):
@@ -173,13 +173,12 @@ plot(strokeTree)
 ```{r}
 #make predictions using the c5.0 gain ratio tree on the test data
 testPred <- predict(strokeTree, newdata = testData)
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 #create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -209,13 +208,12 @@ plot(strokeTree)
 ```{r}
 #make predictions using the c5.0 gain ratio tree on the test data
 testPred <- predict(strokeTree, newdata = testData)
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 #create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -255,9 +253,15 @@ heart_disease, ever_married, work_type, and smoking_status:
 ```{r}
 set.seed(123)
 library('MASS')
-data$age= cut(data$age, breaks= seq(0,90, by=40),right=TRUE)
+library("discretization")
+cutPoints(data$age,data$stroke)
+data$age= cut(data$age, breaks= seq(0,1, by=0.2),right=TRUE)
+
+cutPoints(data$avg_glucose_level,data$stroke)
 data$avg_glucose_level	= cut(data$avg_glucose_level, breaks= seq(0,1, by=0.5),right=TRUE)
-data$bmi	= cut(data$bmi, breaks= seq(0,1, by=0.5),right=TRUE)
+
+cutPoints(data$bmi,data$stroke)
+data$bmi	= cut(data$bmi, breaks= seq(0,0.7, by=0.2),right=TRUE)
 data$hypertension <- as.factor(data$hypertension )
 data$heart_disease <- as.factor(data$heart_disease )
 data$ever_married   <- as.factor(data$ever_married  )
@@ -287,14 +291,12 @@ plot(stroke_ctree)
 ```{r}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
-table(testPred, testData$stroke)
-
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -309,7 +311,7 @@ print(results)
 
 ```{r}
 #splitting 80% of data for training, 20% of data for testing
-set.seed(1234)
+set.seed(321)
 ind=sample (2, nrow(data), replace=TRUE, prob=c(0.80 , 0.20))
 trainData=data[ind==1,]
 testData=data[ind==2,]
@@ -327,13 +329,12 @@ plot(stroke_ctree)
 ```{r}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -348,7 +349,7 @@ print(results)
 
 ```{r}
 #splitting 85% of data for training, 15% of data for testing
-set.seed(1234)
+set.seed(111)
 ind=sample (2, nrow(data), replace=TRUE, prob=c(0.85 , 0.15))
 trainData=data[ind==1,]
 testData=data[ind==2,]
@@ -366,13 +367,12 @@ plot(stroke_ctree)
 ```{r}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -422,13 +422,12 @@ rpart.plot(tree)
 ```{r}
 #make predictions using the rpart gini index tree on the test data
 testPred <- predict(tree, newdata = testData,type = 'class')
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -458,13 +457,12 @@ rpart.plot(tree)
 ```{r}
 #make predictions using the rpart gini index tree on the test data
 testPred <- predict(tree, newdata = testData,type = 'class')
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
@@ -494,13 +492,12 @@ rpart.plot(tree)
 ```{r}
 #make predictions using the rpart gini index tree on the test data
 testPred <- predict(tree, newdata = testData,type = 'class')
-table(testPred, testData$stroke)
 ```
 
 ```{r}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
-results <- confusionMatrix(testPred, testData$stroke)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
 acc <- results$overall["Accuracy"]*100
 acc
 results
