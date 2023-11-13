@@ -258,6 +258,8 @@ after that we convert all the remaining attributes in the dataset to numeric for
 
 ```{r}
 ##################################cluster
+install.packages('DPBBM')
+install.packages(factoextra)
 library(factoextra)     
 sr<-(data$stroke)
 data <- data[,!names(data) %in% c("stroke","id","Residence_type","gender","heart_disease","bmi","work_type","smoking_status")]
@@ -314,14 +316,15 @@ fviz_silhouette(sil)
 # Total sum of squares
 km$tot.withinss
 
+```
 
+```{r}
 
 #bcubed metrix that take the avg of precision&recall
-install.packages('DPBBM')
+
 library('DPBBM')
 c = km$cluster
 sr <- as.integer(sr)
-
 BCubed_metric(sr, km$cluster, 0.5)
 
 ```
@@ -349,7 +352,9 @@ fviz_silhouette(sil)
 
 # Total sum of squares
 km$tot.withinss
+```
 
+```{r}
 #bcubed metrix that take the avg of precision&recall
 #install.packages('DPBBM')
 library('DPBBM')
@@ -381,7 +386,9 @@ fviz_silhouette(sil)
 
 # Total sum of squares
 km$tot.withinss
+```
 
+```{r}
 #bcubed metrix that take the avg of precision&recall
 #install.packages('DPBBM')
 library('DPBBM')
