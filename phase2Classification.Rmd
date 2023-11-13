@@ -120,6 +120,8 @@ ratios of different features and selects the feature with the highest
 ratio as the best split. This approach helps prevent bias towards
 features with a large number of values or categories.
 
+To apply this, we have used the C5.0.default method from the "C50" package. This model extends the C4.5 classification algorithms, and can take the form of a full decision tree or a collection of rules.
+
 1-partition the data into ( 70% training, 30% testing):
 
 ```{r}
@@ -224,7 +226,8 @@ as.matrix(results, what = "classes")
 print(results)
 ```
 
--Information gain (ctree) Information gain is a measure used in decision
+-Information gain (ctree):
+Information gain is a measure used in decision
 tree algorithms to evaluate the usefulness of a feature in splitting the
 data. It quantifies the reduction in entropy or impurity achieved by
 splitting the dataset based on that feature.
@@ -244,6 +247,10 @@ By selecting features with high information gain, the decision tree
 algorithm aims to create subsets that are more homogeneous or pure in
 terms of the class labels. This allows for better classification or
 prediction within each subset.
+
+To apply this, we have used the ctree method from the "party" package.
+
+
 
 This method requires the continuous valued attributes to be discritized,
 so we will discretize age, avg_glucose_level, and bmi. The method
@@ -383,7 +390,8 @@ as.matrix(results, what = "classes")
 print(results)
 ```
 
--Gini index (rpart): In a nutshell, the Gini index is a measure of
+-Gini index (rpart):
+In a nutshell, the Gini index is a measure of
 impurity or the degree of disorder in a dataset. It is commonly used in
 decision tree algorithms to evaluate the quality of a split when
 constructing the tree.
@@ -402,6 +410,9 @@ different features in the dataset. It calculates the Gini index for each
 split and selects the one with the lowest value. The chosen split
 results in the highest possible purity or homogeneity of the resulting
 subsets.
+
+To apply this, we have used the rpart method from the "rpart" package.
+
 
 1-partition the data into ( 70% training, 30% testing):
 
