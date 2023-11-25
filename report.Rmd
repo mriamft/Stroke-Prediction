@@ -1,0 +1,1237 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+# 1- Problem:
+
+Stroke is the second-leading cause of death and the most common global cause of disability. WHO estimates that 1 in 4 persons may experience a stroke during their lifetime; because strokes can occur at any time and to anyone, regardless of age, we have chosen to concentrate on this dataset. Given the sudden nature of strokes, we intend to investigate and analyze the data to provide predictions on what are some risk factors and shed light on the types of people who are likely to experience one, allowing for future changes in lives. This dataset is used to predict whether a patient is likely to get stroke based on the input parameters like gender, age,bmi, various diseases such as hypertension and heart disease, smoking status,marital status and residence type. Each row in the data provides relavant information about the patient.
+
+# 2- Data mining task:
+
+Data mining plays a crucial role in predicting the probability of having a stroke through classification and clustering techniques. By applying data mining algorithms to a large dataset containing various health-related features, valuable patterns and relationships can be discovered. In the classification aspect, data mining aids in building models that can accurately classify individuals into different categories, such as 1 for "stroke" or 0 for "non-stroke," based on their attributes and risk factors. This helps in identifying individuals who are more likely to experience a stroke, enabling proactive interventions and preventive measures. On the other hand, clustering techniques assist in identifying groups or clusters of individuals with similar characteristics, allowing for a deeper understanding of stroke risk factors and potential subgroups within the population. By leveraging data mining in stroke prediction, healthcare professionals and researchers can gain valuable insights and develop effective strategies for stroke prevention, early detection, and personalized treatments.
+
+# 3- Dataset information:
+
+Our dataset source is : <https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset>
+
+```{r}
+data<-read.csv("Dataset/healthcare-dataset-stroke-data.csv")
+```
+
+```{r}
+head(data)
+```
+
+## Genral info about the dataset:
+
+Among the 5110 objects in our dataset sample, 12 attributes are used to describe them. Our characteristics' values are utilized to identify their types, such as the nominal for id, binary for gender, and numeric for age.\
+Additionally, we had two attributes for hypertension and heart disease that took two values 1 and 0 to indicate whether they are sufferd from it or not, respectively. The last attribute, **"stroke"**, was described by two values 0 and 1 for the possibility of having a stroke or not as a result of analysis of the previous data, , which is what we aim to train our model to predict.
+
+## Data dictionary:
+
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| Attribute Name    | Description                                                                               | Data Type | Possible values         |
++===================+===========================================================================================+===========+=========================+
+| id                | Unique id of the patient                                                                  | Nominal   | Range between 67-72940  |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| gender            | Gender of the patient                                                                     | Binary    | Female\                 |
+|                   |                                                                                           |           | Male                    |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| age               | Age of the patient                                                                        | Numeric   | Range between 0.08-82   |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| hypertension      | Hypertension binary feature, 1 means the patient has hypertension, 0 means they do not.   | Binary    | 0,1                     |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| heart_disease     | Heart disease binary feature, 1 means the patient has heart disease, 0 means they do not. | Binary    | 0,1                     |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| ever_married      | Has the patient ever been married?                                                        | Binary    | Yes\                    |
+|                   |                                                                                           |           | No                      |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| work_type         | Work type of the patient                                                                  | Nominal   | "Private"\              |
+|                   |                                                                                           |           | "Self-employed"\        |
+|                   |                                                                                           |           | "children"\             |
+|                   |                                                                                           |           | "Govt_job"\             |
+|                   |                                                                                           |           | "Never_worked"          |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| residence_type    | Residence type of the patient                                                             | Binary    | "Urban"\                |
+|                   |                                                                                           |           | "Rural"                 |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| avg_glucose_level | Average glucose level in blood                                                            | Numeric   | Range between 55.1-272  |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| bmi               | Body Mass Index                                                                           | Numeric   | Range between 10.3-97.6 |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| smoking_status    | Smoking status of the patient                                                             | Nominal   | "never smoked"\         |
+|                   |                                                                                           |           | "Unknown"\              |
+|                   |                                                                                           |           | "formerly smoked"\      |
+|                   |                                                                                           |           | "smokes"                |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+| stroke            | Stroke event, 1 means the patient had a stroke, 0 means not                               | Binary    | 0,1                     |
++-------------------+-------------------------------------------------------------------------------------------+-----------+-------------------------+
+
+```{r}
+str(data)
+```
+
+```{r}
+#Number of rows
+nrow(data)
+#Number of column
+ncol(data)
+```
+
+```{r}
+# import necessary libraries
+library(tidyverse)   
+library(ggplot2)
+library(lubridate)
+library(magrittr)
+library(dplyr)
+library(tidyr) 
+library(readr)
+library(outliers)
+library(caret) 
+library(DMwR2) 
+library(tidyverse)
+library(lubridate)
+library(skimr)
+library(janitor)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(ggplot2)
+library(gridExtra)
+```
+
+# 4- Understanding the data through graph representations:
+
+```{r}
+# check gender
+data <- data %>% filter(gender != "Other")
+ggplot(data, aes(x = gender, fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(fill = "STROKE", title= "Incident of stroke between genders")
+```
+
+The total number of strokes by gender in our data set are shown in the bar chart. It demonstrates if there is a correlation between gender and the frequency of stroke cases in each gender. We can see that men are slightly more likely than women to experience a stroke.
+
+<hr>
+
+```{r}
+tab <- data$work_type %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt ,main= "Chart of employement status") # plot pie chart
+```
+
+This pie chart illustrates the various worker types according to the employment sector type in our data collection. The summarization of our data collection's is nominal data, which shows people who work for the private sector are present at a higher percentages (57.2%) than those who work for the self-employed sector (16%) and so on.
+
+<hr>
+
+```{r}
+ggplot(data) + geom_point(mapping = aes(y = age, x = stroke, color = stroke ), alpha =0.9 )+ 
+  labs(title = "Distribution of Stroke status by age" ) +
+  theme( plot.title = element_text(size = 14, face = "bold"), legend.position = "none", axis.line = element_line(size = 1), axis.ticks = element_line() )
+```
+
+The above chart shows the age distribution of stroke victims. Our results showed a correlation between age and stroke, showing a greater likelihood of stroke with older age.
+
+<hr>
+
+```{r}
+ggplot(data, aes(x = ever_married, fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(fill = "STROKE", title="Correlation between stroke occurence and marrige status")
+```
+
+The correlation between having a stroke and being married is illustrated in a bar graph. We discovered that people who are married have a higher risk of having a stroke than people who are not married.
+
+<hr>
+
+```{r}
+# Histogram of Average Glucose Level with normal distribution overlay
+histglucose <- hist(data$avg_glucose_level,xlim=c(0,300),
+                main="Histogram of Avg. Glucose with Normal Distribution Overlay",
+                xlab="Avg. Glucose",las=1)
+xfit <- seq(min(data$avg_glucose_level),max(data$avg_glucose_level))
+yfit <- dnorm(xfit,mean=mean(data$avg_glucose_level),sd=sd(data$avg_glucose_level))
+yfit <- yfit*diff(histglucose$mids[1:2])*length(data$avg_glucose_level)
+lines(xfit,yfit,col="red",lwd=2)
+```
+
+The average glucose levels of the patients in the study are right skewed, with mean of 106.15 from the summary() function earlier. We notice that there is an increase in frequency when the glucose level reaches 200, which makes us wonder if this elevation is a factor for a stroke.
+
+# 4- Data Preprocessing:
+
+In our data, we performed several data preprocessing techniques such as data cleaning, data normalization, removing outliers and null values, etc. We'll go through each one in details below.
+
+### 4.1 Remove Null values:
+
+Null values can cause issues when performing data analysis or building machine learning models, as they can lead to inaccurate results or errors, therefore we will remove them.
+
+```{r}
+# Change "N/A" to actual NULL
+data$bmi[data$bmi=="N/A"] <-NA
+```
+
+```{r}
+# Checking missing values
+sum(is.na(data))
+```
+
+```{r}
+
+# Converting bmi to numeric
+data$bmi <- as.numeric(as.character(data$bmi))
+# Checking bmi type
+class(data$bmi)
+
+# Replacing null values with the mean
+data$bmi[is.na(data$bmi)]<-mean(data$bmi, na.rm = TRUE)
+
+# Missing values
+sum(is.na(data))
+```
+
+### 4.2 Check duplicated rows
+
+We check if there are any duplicated rows to decrease dataset volume. Hence enhancing data quality which leads to better model performance and speed.
+
+```{r}
+# Checking duplicated rows
+sum(duplicated(data))
+```
+
+### 4.3 Detect and remove outliers:
+
+We check if there are any outlier values in our dataset, and we detected a few in our dataset. The presence of outliers can have a significant impact on statistical analyses and modeling. Outliers, being data points that deviate significantly from the majority of the data, can distort results and affect the validity and reliability of conclusions drawn from the analysis. Therefore, we must delete them before we start our work in order to prevent it from affecting our results. To address this issue, an outlier detection procedure was applied to the dataset. The detection method employed uses Outliers package that has Outlier() function to help us detect. This approach identified data points that were deemed to be outliers.
+
+```{r}
+#call outliers library
+library(outliers)
+#detect Age outliers
+OutAge <- outlier(data$age)
+print(OutAge)
+```
+
+After detecting the outliers of Age attribute, we made sure of their location before deleting them
+
+```{r}
+#checking the outlier location before delete
+indices <- which(data$age == OutAge)
+# Print the resulting row indices
+print(indices)
+#Remove age outlier
+data <- data[data$age != OutAge, ]
+#detect Average glucose level outliers
+OutAvg <- outlier(data$avg_glucose_level)
+print(OutAvg)
+#Remove Average glucose level outlier
+data <- data[data$avg_glucose_level != OutAvg, ]
+#detect bmi outliers
+OutBMI <- outlier(data$bmi)
+print(OutBMI)
+#Remove bmi outlier
+data <- data[data$bmi != OutBMI, ]
+```
+
+```{r}
+#check after deleting
+#Number of rows
+nrow(data)
+#Number of column
+ncol(data)
+```
+
+We noticed that the number of rows is 5 less which mean the outlier are deleted successfully, and that will help us since the outlier causes a noise in the data it will be smoothed later to have more accurate data.
+
+To make sure that the deletion was successful, we searched for the rows that contain the Outlier values, and the results were all zero, which confirms to us that the deletion was successful.
+
+```{r}
+indices <- which(data$age == OutAge)
+# Print the resulting row indices
+print(indices)
+
+indices3 <- which(data$avg_glucose_level == OutAvg)
+# Print the resulting row indices
+print(indices3)
+
+indices2 <- which(data$bmi == 97.6)
+# Print the resulting row indices
+print(indices2)
+```
+
+### 4.4 Cleaning the data
+
+```{r}
+#only one column with Gender "Other" 
+data[data$gender=="Other", ]
+# delete it 
+data = data[data$gender!="Other", ]
+##check
+table(data$gender)
+## convert stroke to factor(to use scaling)
+data$stroke <- as.factor(data$stroke)
+```
+
+### 4.5 Encoding categorical data:
+
+Encoding is an important step in data mining and machine learning tasks because it transforms raw data into a suitable format that can be effectively processed and analyzed by algorithms. The process of encoding involves converting categorical or textual data into numerical representations.
+
+```{r}
+head(data)
+data$work_type = factor(data$work_type,levels = c("Govt_job","Private", "Self-employed","children","Never_worked"), labels = c(5,4,3,2,1))
+data$gender = factor(data$gender, levels = c("Male", "Female"), labels = c(1, 2))
+data$ever_married= factor(data$ever_married, levels = c("No", "Yes"), labels = c(0, 1))
+data$Residence_type= factor(data$Residence_type, levels = c("Urban", "Rural"), labels=c(1,2))
+data$smoking_status= factor(data$smoking_status, levels = c("Unknown","never smoked", "formerly smoked","smokes"), labels=c(1,2,3,4))
+head(data)
+```
+
+## 5- Normalize Data using Min-Max Scaling:
+
+normalization was performed to ensure consistent scaling of the data. The normalization technique applied was the max-min normalization. This technique rescales the values of specific attributes within a defined range between 0 and 1. The following attributes were selected for normalization: age, average glucose level, and BMI (Body Mass Index). We can use the normalized dataset provides a more uniform and comparable representation of the attributes, enabling accurate analysis and modeling for stroke prediction with result as shown.
+
+```{r}
+#normalize data
+normalize <- function(x){ return ((x - min(x))/ (max(x)- min(x)))}
+data$avg_glucose_level= normalize(data$avg_glucose_level)
+data$age= normalize(data$age)
+data$bmi= normalize(data$bmi)
+head(data)
+```
+
+## 6- Discretization
+
+After the process of normalizing and cleaning the data, we found that there is no requirement for feature discretization.
+
+## 7- Feature selection
+
+We will reduce the number of input variables for our predictive model using a feature selection tool called Recursive Feature Elimination(RFE), which is a widely used algorithm for selecting features that are most relevant in predicting the target variable (stroke in our case) in a predictive model, as well as varImp function which calculates variable importance for objects
+
+```{r}
+# ensure results are repeatable
+set.seed(7)
+# load the library
+library(mlbench)
+library(caret)
+
+# prepare training scheme
+control <- trainControl(method="repeatedcv", number=10, repeats=3)
+# train the model
+model <- train(stroke~., data, method="lvq", preProcess="scale", trControl=control)
+# estimate variable importance
+importance <- varImp(model, scale=FALSE)
+# summarize importance
+print(importance)
+# plot importance
+plot(importance)
+```
+
+```{r}
+# ensure the results are repeatable
+set.seed(7)
+# define the control using a random forest selection function
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+# run the RFE algorithm
+results <- rfe(data[,1:11], data[,12], sizes=c(1:11), rfeControl=control)
+# summarize the results
+print(results)
+# list the chosen features
+predictors(results)
+# plot the results
+plot(results, type=c("g", "o"))
+```
+
+Both methods show that the **Residence type, gender, and id** attributes have little relevance in predicting a stroke. Therefore, we will remove them.
+
+```{r}
+#delete id,gender,residence type coloumns
+data <-data[,!names(data) %in% c("id", "gender", "Residence_type")]
+head(data)
+```
+
+# Imbalanced dataset problem:
+
+In the given dataset, it is observed that only around 5% of all the individuals have experienced a stroke at some point. Consequently, our baseline dummy model achieves an accuracy of 95% by consistently predicting that individuals do not have a stroke. When evaluating our model, an essential metric to consider is sensitivity, also known as recall or the probability of detection. Low sensitivity indicates that our model struggles to identify true positive cases, even if the overall accuracy is high. In this case, the dummy model has a sensitivity of 0 since it fails to identify any true positives.
+
+Addressing the class imbalance issue, there are various approaches available. Considering the limited size of the dataset, oversampling the minority class is deemed the most suitable strategy. By oversampling, we increase the representation of the minority class instances, enabling the model to learn and generalize better for this class.
+
+```{r}
+# upscaling the data
+library('caret')
+library('dplyr')
+data<-upSample(data[,-9],data$stroke, yname="stroke")
+#data<-downSample(data[,-9],data$stroke, yname="stroke")
+plot(data$stroke)
+data$stroke<- as.factor(data$stroke)
+## copying the data into 2 data frames, one for classification and one for clustering which will be used later
+data_class <- data.frame(data)
+data_cluster <- data.frame(data)
+#Finally, checking overall
+head(data)
+#Number of rows
+nrow(data)
+```
+
+# Data Mining Techniques:
+
+We conducted both supervised and unsupervised learning on our dataset, utilizing classification and clustering techniques. For classification, we employed a decision tree algorithm, which recursively constructs a tree with leaf nodes representing the final decisions. Our goal was to predict the class label "stroke," which has two categories: "yes" and "no." The prediction was based on selected attributes derived from the feature selection results, namely "ever_married," "hypertension," "avg_glucose," and "ages."
+
+The classification technique involved splitting the dataset into two subsets: Training dataset: Used for constructing the decision tree model. Testing dataset: Employed to assess the performance of the constructed model.
+
+To evaluate the effectiveness of our model, we utilized a confusion matrix and measured both accuracy and cost-sensitive metrics on the dataset.
+
+## 5.1 Classification:
+
+Classification is supervised learning, therefore we need training data to train the model, and test data to evaluate its' performance. We tried three different size of partitions and three attribute selection measures: Information gain (IG), Gain ratio (IG ration), and Gini index.
+
+Since our dataset size is limited, we set the value of replace attribute "TRUE" so the tuples of the training data will be selected with replacement and the rest will be included in the test data portion. We always gave the training subset the biggest portion of our dataset because our model's ability to predict the class label correctly for new data is dependent on the constructing and training of the model. Our model -represented by a decision tree algorithm- needs to be fed with large enough data to be able to build the rules correctly. So when we test the model on the test data, it can predict the labels easily and accurately. Choosing the attributes involved in classification was based on the results of feature selection. We specifically chose the first four attributes based on the results obtained. We also used a balanced sample of our data consisting of 1000 tuples to create a comprehensible tree:
+
+```{r}
+myFormula <- stroke ~ age + hypertension +ever_married+avg_glucose_level
+data_class <- data_class %>%group_by(stroke) %>% sample_n(size=500)
+```
+
+## Evaluation
+
+### -Gain ratio (C.50):
+
+Gain ratio is a metric used in decision tree algorithms to evaluate the quality of a split based on the information gain and the intrinsic information of a feature. It takes into account the entropy or impurity of a dataset and the potential information gained by splitting the data based on a specific feature.
+
+The gain ratio is calculated by dividing the information gain by the split information. Information gain measures the reduction in entropy achieved by splitting the dataset based on a particular feature. Split information quantifies the potential information generated by the feature itself.
+
+Using the gain ratio in a decision tree, the algorithm compares the gain ratios of different features and selects the feature with the highest ratio as the best split. This approach helps prevent bias towards features with a large number of values or categories.
+
+To apply this, we used the C5.0.default method from the "C50" package. This model extends the C4.5 classification algorithms, and can take the form of a full decision tree or a collection of rules. It aims to find the feature that provides the most informative and balanced splits and construct the tree, considering both the reduction in uncertainty and the characteristics of the feature. This helps in avoiding biases and making more robust decisions during the tree construction process.
+
+#### 1-partition the data into ( 70% training, 30% testing):
+
+```{r}
+#splitting 70% of data for training, 30% of data for testing
+library('C50')
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the c5.0 gain ratio tree
+strokeTree <- C5.0(myFormula, data=trainData)
+summary(strokeTree)
+plot(strokeTree)
+```
+
+```{r}
+#make predictions using the c5.0 gain ratio tree on the test data
+testPred <- predict(strokeTree, newdata = testData)
+```
+
+```{r}
+#create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 2-partition the data into ( 80% training, 20% testing):
+
+```{r}
+#splitting 80% of data for training, 20% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the c5.0 gain ratio tree
+strokeTree <- C5.0(myFormula, data=trainData)
+summary(strokeTree)
+plot(strokeTree)
+```
+
+```{r}
+#make predictions using the c5.0 gain ratio tree on the test data
+testPred <- predict(strokeTree, newdata = testData)
+```
+
+```{r}
+#create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 3-partition the data into ( 85% training, 15% testing):
+
+```{r}
+#splitting 85% of data for training, 15% of data for testing
+trctrl <- trainControl(method = "cv", number = 10, savePredictions=TRUE)
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the c5.0 gain ratio tree
+strokeTree <- C5.0(myFormula, data=trainData,)
+summary(strokeTree)
+plot(strokeTree)
+```
+
+```{r}
+#make predictions using the c5.0 gain ratio tree on the test data
+testPred <- predict(strokeTree, newdata = testData)
+```
+
+```{r}
+#create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### Now lets compare between the different partitions results in GAIN RATIO
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.8079                             | 0.8365                             | 0.8428                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.7667                             | 0.8154                             | 0.7925                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.8961                             | 0.9138                             | 0.9655                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.7162                             | 0.7391                             | 0.6944                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+Among these partitioning ratios, the model trained on the 85% training set and 15% testing set achieved the highest accuracy (0.8428), followed by the model trained on the 80% training set and 20% testing set (0.8365), and the model trained on the 70% training set and 30% testing set (0.8079).
+
+In terms of precision, the model trained on the 80% training set and 20% testing set achieved the highest precision (0.8154), followed by the model trained on the 85% training set and 15% testing set (0.7925), and the model trained on the 70% training set and 30% testing set (0.7667).
+
+For sensitivity, the model trained on the 85% training set and 15% testing set had the highest sensitivity (0.9655), followed by the model trained on the 80% training set and 20% testing set (0.9138), and the model trained on the 70% training set and 30% testing set (0.8961).
+
+In terms of specificity, the model trained on the 80% training set and 20% testing set achieved the highest specificity (0.7391), followed by the model trained on the 70% training set and 30% testing set (0.7162), and the model trained on the 85% training set and 15% testing set (0.6944).
+
+Based on these results, the model trained on the 85% training set and 15% testing set appears to be the best partitioning ratio, as it showed the highest accuracy and a balanced performance in terms of precision, sensitivity, and specificity.
+
+Overall, the results obtained from the decision tree using the gain ratio as the splitting criterion are realistic and promising. The accuracy values are reasonably high, indicating that the model can make correct predictions on the testing data. The precision, sensitivity, and specificity measures also demonstrate a good balance between correctly identifying the positive instances, correctly identifying the negative instances, and avoiding false positives and false negatives.
+
+### -Information gain (ctree):
+
+Information gain is a measure used in decision tree algorithms to evaluate the usefulness of a feature in splitting the data. It quantifies the reduction in entropy or impurity achieved by splitting the dataset based on that feature.
+
+Entropy is a measure of the disorder or randomness in a dataset, specifically the uncertainty of class labels. Information gain calculates the difference between the entropy of the parent node (before the split) and the weighted average of the entropies of the child nodes (after the split).
+
+To use information gain in a decision tree, the algorithm examines different features and calculates the information gain for each one. The feature with the highest information gain is selected as the best choice for splitting the data.
+
+By selecting features with high information gain, the decision tree algorithm aims to create subsets that are more homogeneous or pure in terms of the class labels. This allows for better classification or prediction within each subset.
+
+To apply this, we have used the ctree method from the "party" package. This method requires the continuous valued attributes to be discritized, so we will discretize age, avg_glucose_level, and bmi. The method doesn't accept char values, so we will change hypertension, heart_disease, ever_married, work_type, and smoking_status:
+
+```{r}
+set.seed(123)
+library('MASS')
+library("discretization")
+cutPoints(data_class$age,data_class$stroke)
+data_class$age= cut(data_class$age, breaks= seq(0,1, by=0.2),right=TRUE)
+
+cutPoints(data_class$avg_glucose_level,data_class$stroke)
+data_class$avg_glucose_level	= cut(data_class$avg_glucose_level, breaks= seq(0,1, by=0.5),right=TRUE)
+
+cutPoints(data_class$bmi,data_class$stroke)
+data_class$bmi	= cut(data_class$bmi, breaks= seq(0,0.7, by=0.2),right=TRUE)
+data_class$hypertension <- as.factor(data_class$hypertension )
+data_class$heart_disease <- as.factor(data_class$heart_disease )
+data_class$ever_married   <- as.factor(data_class$ever_married  )
+data_class$work_type   <- as.factor(data_class$work_type  )
+data_class$smoking_status <- as.factor(data_class$smoking_status )
+```
+
+#### 1-partition the data into ( 70% training, 30% testing):
+
+```{r}
+#splitting 70% of data for training, 30% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the ctree information gain tree
+library(party)
+library(plyr)
+library(readr)
+stroke_ctree <- ctree(myFormula, data=trainData)
+print(stroke_ctree)
+plot(stroke_ctree,type="simple")
+plot(stroke_ctree)
+```
+
+```{r}
+#make predictions using the ctree information gain tree on the test data
+testPred <- predict(stroke_ctree, newdata = testData)
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 2-partition the data into ( 80% training, 20% testing):
+
+```{r}
+#splitting 80% of data for training, 20% of data for testing
+set.seed(321)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the ctree information gain tree
+library(party)
+library(plyr)
+library(readr)
+stroke_ctree <- ctree(myFormula, data=trainData)
+print(stroke_ctree)
+plot(stroke_ctree,type="simple")
+plot(stroke_ctree)
+```
+
+```{r}
+#make predictions using the ctree information gain tree on the test data
+testPred <- predict(stroke_ctree, newdata = testData)
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 3-partition the data into ( 85% training, 15% testing):
+
+```{r}
+#splitting 85% of data for training, 15% of data for testing
+set.seed(111)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the ctree information gain tree
+library(party)
+library(plyr)
+library(readr)
+stroke_ctree <- ctree(myFormula, data=trainData)
+print(stroke_ctree)
+plot(stroke_ctree,type="simple")
+plot(stroke_ctree)
+```
+
+```{r}
+#make predictions using the ctree information gain tree on the test data
+testPred <- predict(stroke_ctree, newdata = testData)
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### Now lets compare between the different partitions results in INFORMATION GAIN
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.7748                             | 0.781                              | 0.7984                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.7067                             | 0.7241                             | 0.7468                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.9545                             | 0.9459                             | 0.9077                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.5878                             | 0.5960                             | 0.6875                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+Among these partitioning ratios, the model trained on the 85% training set and 15% testing set achieved the highest accuracy (0.7984) among the three ratios, followed by the model trained on the 80% training set and 20% testing set with an accuracy of (0.781), and finally the 70% training set and 30% testing set with an accuracy of (0.7748)
+
+In terms of precision, the model trained on the 85% training set and 15% testing set obtained the highest precision (0.7468), followed by the model trained on the 80% training set and 20% testing set (0.7241), and the model trained on the 70% training set and 30% testing set (0.7067).
+
+For sensitivity, the model trained on the 70% training set and 30% testing set achieved the highest sensitivity (0.9545), followed by the models trained on the 80% training set and 20% testing set (0.9459), and the 85% training set and 15% testing set (0.9077).
+
+In terms of specificity, the model trained on the 85% training set and 15% testing set obtained the highest specificity (0.6875), followed by the model trained on the 80% training set and 20% testing set (0.5960), and the model trained on the 70% training set and 30% testing set (0.5878).
+
+Based on these results, both the models trained on the 85% training set and 15% testing set, and the 80% training set and 20% testing set show similar and better performance compared to the model trained on the 70% training set and 30% testing set. The accuracy, precision, sensitivity, and specificity measures are relatively high, indicating that the models can make reasonably accurate predictions.
+
+Overall, the results obtained from the decision tree using information gain as the splitting criterion are realistic and indicate good performance.
+
+### -Gini index (rpart):
+
+Gini index is a measure of impurity or the degree of disorder in a dataset. It is commonly used in decision tree algorithms to evaluate the quality of a split when constructing the tree.
+
+When building a decision tree, each potential split is assessed using the Gini index. The Gini index calculates the probability of misclassifying a randomly chosen element from a dataset if it were randomly labeled according to the distribution of classes in that subset. A lower Gini index indicates a more pure or homogeneous subset, meaning that the classes within that subset are similar.
+
+To use the Gini index in a decision tree, the algorithm considers various potential splits based on different features in the dataset. It calculates the Gini index for each split and selects the one with the lowest value. The chosen split results in the highest possible purity or homogeneity of the resulting subsets.
+
+For Gini index we used Rpart which is a powerful machine learning library in R that is used for building classification and regression trees. This library implements recursive partitioning and is very easy to use. Rpart has many useful methods which assist us in building our model, for example rpart() for constructing the model and rpart.plot() for representing the tree
+
+#### 1-partition the data into ( 70% training, 30% testing):
+
+```{r}
+#splitting 70% of data for training, 30% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 2-partition the data into ( 80% training, 20% testing):
+
+```{r}
+#splitting 80% of data for training, 20% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+### 3-partition the data into ( 85% training, 15% testing):
+
+```{r}
+#splitting 85% of data for training, 15% of data for testing
+set.seed(1234)
+ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
+trainData=data_class[ind==1,]
+testData=data_class[ind==2,]
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### Now let's compare between the different partitions results in GINI INDEX:
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.7748                             | 0.8029                             | 0.8176                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.7067                             | 0.7483                             | 0.7636                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.9545                             | 0.9741                             | 0.9655                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.5878                             | 0.5870                             | 0.6389                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+Looking at the accuracy values, the model trained on the 85% training set and tested on the 15% testing set achieved the highest accuracy (0.8176), followed closely by the model trained on the 80% training set and 20% testing set (0.8029), and the model trained on the 70% training set and 30% testing set (0.7748).
+
+In terms of precision, which measures the proportion of correctly predicted positive instances, the model trained on the 85% training set and 15% testing set also obtained the highest precision (0.7636), followed by the model trained on the 80% training set and 20% testing set (0.7483), and the model trained on the 70% training set and 30% testing set (0.7067).
+
+For sensitivity, which represents the ability to correctly identify positive instances, the model trained on the 80% training set and 20% testing set had the highest sensitivity (0.9741), followed by the models trained on the 85% training set and 15% testing set with a sensitivity of (0.9655), and the 70% training set and 30% testing set,with a sensitivity of (0.9545).
+
+In terms of specificity, which measures the ability to correctly identify negative instances, the model trained on the 85% training set and 15% testing set achieved the highest specificity (0.6389), followed by the model trained on the 70% training set and 30% testing set (0.5878), and the model trained on the 80% training set and 20% testing set (0.5870).
+
+It is important to highlight that the decision tree constructed using the Gini index solely relied on the "age" attribute, which is not an ideal approach. Depending on a single attribute for building the decision tree can lead to a limited ability to predict accurately, and it is advisable to include additional relevant attributes. This raises the question of whether the "age" attribute truly has a stronger impact compared to other attributes in the feature selection results.
+
+## 5.2 Clustering:
+
+The clustering process involves grouping similar data points together based on their inherent characteristics or similarities. One popular clustering algorithm is k-means, which partitions the dataset into k clusters, where each data point belongs to the cluster with the nearest mean value based on Euclidean distance.
+
+By applying the k-means algorithm to the Stroke Prediction Dataset, while removing the stroke class label and converting attributes to numeric format, we can effectively perform clustering analysis to identify patterns and groupings within the data. This process aids in uncovering valuable insights and potentially discovering hidden relationships among the variables, which can further enhance our understanding of stroke risk factors and contribute to better healthcare strategies
+
+We can implement clustering by following a few steps.
+
+First, we remove the class label "stroke" from the dataset since clustering is an unsupervised learning task and does not require labeled data. In addition, we remove certain attributes (heart_disease, work_type, smoking_status, and bmi) and selected the top four attributes (age, hypertension, ever_married, avg_glucose_level) after applying feature selection.
+
+```{r}
+library(factoextra)     
+sr<-(data_cluster$stroke)
+data_cluster <- data_cluster[,!names(data_cluster) %in% c("stroke","id","Residence_type","gender","heart_disease","bmi","work_type","smoking_status")]
+
+head(data_cluster)
+
+str(data_cluster)
+```
+
+Then we convert all the remaining attributes in the dataset to numeric format. This step ensures compatibility with the k-means algorithm, which operates on numerical data.
+
+```{r}
+#Converting interger&factor columns too numeric
+
+data_cluster$age<- as.numeric(data_cluster$age )
+data_cluster$hypertension <- as.numeric(data_cluster$hypertension )
+data_cluster$avg_glucose_level <- as.numeric(data_cluster$avg_glucose_level)
+data_cluster$ever_married <- as.numeric(data_cluster$ever_married)
+#for ease creating a data set without color column
+data_no_color <- data_cluster[1:4]
+
+#Let us see the structure again
+str(data_no_color)
+```
+
+Once the preprocessing is complete, we can proceed with implementing the k-means clustering algorithm. We start by selecting a suitable value for k, which represents the number of clusters we want to identify in the data. To determine the optimal choice of k, we can try different key sizes such as 2, 3, or 5, and evaluate the clustering results for each value.
+
+After running the k-means algorithm with different values of k, we can assess the quality of the clustering using various evaluation metrics, such as within-cluster sum of squares, silhouette analysis, and BCubed precision and recall. These metrics help us determine the optimal number of clusters that provide the most meaningful and well-separated groups.
+
+-The average silhouette score is measure how similar an object is to its own cluster compared to other clusters . It ranges from -1 to 1, where a high value indicates that the object is well matched to its own cluster and poorly matched to neighboring clusters.
+
+-The WSS (Within-Cluster Sum of Squares) is a metric that measures the compactness of clusters.
+
+-Bcubed is an evaluation metric used in information retrieval and clustering tasks to assess the quality of clustering results. It focuses on measuring the precision, recall.
+
+To determine the optimal choice of k, we try different key sizes, such as 2, 3, or 5.
+
+### - 2 Clusters:
+
+```{r}
+#######cluster k=2
+
+#calculate k-mean k=2
+km <- kmeans(data_cluster, 2, iter.max = 140 , algorithm="Lloyd", nstart=100)
+km
+
+
+
+#plot k-mean 
+fviz_cluster(list(data = data_cluster, cluster = km$cluster),
+             ellipse.type = "norm", geom = "point", stand = FALSE,
+             palette = "jco", ggtheme = theme_classic())
+```
+
+The analysis of the clustering results reveals several significant findings. Firstly, the observation of two non-overlapping clusters in the image indicates the successful separation of data points into distinct groups by the employed clustering algorithm. This outcome is indicative of favorable grouping results, as it demonstrates the algorithm's ability to identify and delineate cohesive clusters within the dataset.
+
+Furthermore, the considerable distance observed between the two clusters signifies a clear separation in the feature space. This characteristic is highly desirable in clustering tasks, as it suggests a substantial dissimilarity between the data points belonging to different clusters. The notable distance between clusters enhances the interpretability of the results and indicates the presence of distinctive patterns or characteristics within each group.
+
+Additionally, the nearly identical sizes of the two clusters are a notable observation. The presence of similar cluster sizes is advantageous in clustering analysis as it implies a balanced distribution of data points across the clusters. This balance facilitates a fair representation of the underlying data and simplifies the interpretation of the unique characteristics exhibited by each cluster.
+
+#### **Average silhouette:**
+
+```{r}
+#avg silhouette
+library(cluster)
+sil <- silhouette(km$cluster, dist(data_cluster))
+rownames(sil) <- rownames(data_cluster)
+fviz_silhouette(sil)
+```
+
+These distinct values suggest the presence of characteristic attributes that differentiate the clusters from each other. Such differentiation is indicative of reasonable clustering outcomes, as it implies the identification of distinct subgroups within the dataset based on the selected attributes. Moreover, the average silhouette widths, measuring 0.58 and 0.52, offer further evaluation of the clustering quality.
+
+A silhouette width above 0.5 is generally considered indicative of a reasonable degree of separation between data points within their assigned clusters. In this analysis, the observed silhouette widths surpass this threshold, suggesting a satisfactory level of discrimination and cohesion within each cluster. Consequently, the clustering algorithm has likely achieved a suitable level of within-cluster similarity and between-cluster dissimilarity, reinforcing the reliability of the clustering results.
+
+#### **Total within-cluster sum of square:**
+
+```{r}
+# Total sum of squares
+km$tot.withinss
+```
+
+Total Sum of Squares (WSS), which serves as a metric for assessing the compactness of the clusters. However, the absolute value of WSS alone may not provide a definitive assessment of the clustering quality and should be interpreted relative to other evaluations.
+
+#### Average BCubed precision and recall
+
+```{r}
+#bcubed metrix that take the avg of precision&recall
+library('DPBBM')
+c = km$cluster
+sr <- as.integer(sr)
+BCubed_metric(sr, km$cluster, 0.5)
+```
+
+The function returns Bcubed F score of the clustering method. The higher the value is, the better performance the clustering method can get, our value (0.5982604) is generally desirable, as it indicates better agreement between the clustering results and the reference class label "stroke".
+
+### - 3 Clusters:
+
+```{r}
+#######cluster k=3
+
+#calculate k-mean
+km <- kmeans(data_cluster, 3, iter.max = 140 , algorithm="Lloyd", nstart=100)
+km
+#plot k-mean
+fviz_cluster(list(data = data_cluster, cluster = km$cluster),
+             ellipse.type = "norm", geom = "point", stand = FALSE,
+             palette = "jco", ggtheme = theme_classic())
+```
+
+We performed clustering analysis with a value of k set to 3 using the 3-mean clustering method. The resulting cluster figure revealed three clusters of unequal size, with one cluster appearing significantly larger compared to the other two. However, it is worth noting since that each cluster contained an approximately equal number of objects.
+
+The clusters displayed clear separation from each other, indicating distinct groupings within the dataset. This separation is a positive outcome as it suggests that the clustering algorithm successfully identified different patterns or characteristics among the data points.
+
+#### **Average silhouette:**
+
+```{r}
+#avg silhouette
+library(cluster)
+sil <- silhouette(km$cluster, dist(data_cluster))
+
+rownames(sil) <- rownames(data_cluster)
+fviz_silhouette(sil)
+```
+
+The average silhouette width, calculated as 0.63, indicates a reasonably high level of separation and cohesion within the clusters. As we mention before that a silhouette width above 0.5 is generally considered indicative of a reasonable degree of separation between data points within their assigned clusters. Therefore, the observed average silhouette width of 0.63 suggests that the clustering algorithm achieved a satisfactory level of discrimination. Comparing this value with the average silhouette width obtained from the 2-mean clustering solution would provide a better understanding of the relative improvement.
+
+#### **Total within-cluster sum of square:**
+
+```{r}
+# Total sum of squares
+km$tot.withinss
+```
+
+A lower WSS value generally indicates better clustering results, suggesting that the data points within each cluster are more tightly grouped around their centroids. And our value here is less than the 2-mean value which mean this clustering is better.
+
+#### **Average BCubed precision and recall**
+
+```{r}
+#bcubed metrix that take the avg of precision&recall
+#install.packages('DPBBM')
+library('DPBBM')
+c = km$cluster
+sr <- as.integer(sr)
+
+BCubed_metric(sr, km$cluster, 0.5)
+```
+
+The Average BCubed precision and recall value of 0.5218951 provides an evaluation of the clustering method's agreement with the reference class label "stroke". While a higher BCubed goodness value is generally desirable.
+
+## - 5 Clusters:
+
+```{r}
+#######cluster k=5
+#calculate k-mean
+km <- kmeans(data_cluster, 5, iter.max = 140 , algorithm="Lloyd", nstart=100)
+km
+
+
+#plot k-mean
+fviz_cluster(list(data = data_cluster, cluster = km$cluster),
+             ellipse.type = "norm", geom = "point", stand = FALSE,
+             palette = "jco", ggtheme = theme_classic())
+
+```
+
+We utilized a value of k equal to 5, employing the 5-mean clustering method. The resulting cluster figure displayed five clusters of equal size. However, two of these clusters appeared to be in close proximity to each other, while the remaining clusters exhibited clear separation.
+
+The closeness between two clusters can occur due to several reasons. It is possible that the data points in these clusters share similar characteristics or have overlapping features, leading to a reduced degree of separation. Alternatively, it could be an indication of limitations in the clustering algorithm's ability to distinguish between these clusters effectively.
+
+### **Average silhouette:**
+
+```{r}
+#avg silhouette
+library(cluster)
+sil <- silhouette(km$cluster, dist(data_cluster))
+rownames(sil) <- rownames(data_cluster)
+fviz_silhouette(sil)
+
+```
+
+The observed value of 0.59 indicates a slightly lower level of discrimination and cohesion compared to the 3-mean clustering solution. The difference in average silhouette width between these two solutions suggests that the 3-mean clustering approach achieved a relatively higher level of separation and cohesion within each cluster.
+
+### **Total within-cluster sum of square:**
+
+```{r}
+# Total sum of squares
+km$tot.withinss
+```
+
+The lower WSS value compared to the 3-mean clustering solution (1232.939) suggests that the clusters in the 5-mean solution are more compact, indicating that the data points within each cluster are more tightly grouped around their centroids. This can be seen as a positive outcome, indicating improved clustering results in terms of compactness.
+
+### Average BCubed precision and recall
+
+```{r}
+#bcubed metrix that take the avg of precision&recall
+#install.packages('DPBBM')
+library('DPBBM')
+c = km$cluster
+sr <- as.integer(sr)
+
+BCubed_metric(sr, km$cluster, 0.5)
+```
+
+the obtained BCubed value of 0.4242592 suggests that there is scope for improvement in terms of the clustering method's agreement with the reference labels. This indicates that the clustering algorithm may not accurately capture the underlying number of clusters k.
+
+### - Optimal number of clusters:
+
+The elbow method and average silhouette method are used to find the optimal number of clusters in a k-means clustering algorithm.
+
+#### **Elbow Method:**
+
+Elbow method with the Within-Cluster Sum of Squares (WSS) to find the optimal number of clusters in a k-means clustering algorithm.
+
+```{r}
+#elbow with wss
+fviz_nbclust(data, kmeans, method = "wss")+ labs(subtitle = "Elbow method")
+```
+
+#### **Average silhouette method:**
+
+The silhouette method helps understand the quality of clustering by measuring how similar an object is to its own cluster (cohesion) compared to other clusters (separation). The optimal number of clusters is often associated with a high average silhouette score.
+
+```{r}
+########### avg  silhouette for all cluster
+fviz_nbclust(data, kmeans, method = "silhouette")
+```
+
+The average silhouette approach determines how well each object lies within its cluster. A high average silhouette width (k=3) indicates a good clustering.
+
+\*\*Although BCubed_metric() gives average values of recall and precision, we decided to choose to use this method because it works with our dataset and gives results that we can infer about the validity of the clustering.
+
+## Findings:
+
+### Classification:
+
+At the outset, our team carefully selected a dataset that represents valuable information about patients. Our goal was to utilize this data to predict the probability of individuals experiencing a stroke. By doing so, we aimed to provide people with the necessary knowledge and preventive measures to improve their overall well-being.
+
+To ensure accurate and reliable results, we applied various preprocessing techniques to refine the dataset. These techniques helped us enhance the efficiency of the data and prepare it for analysis. Additionally, we employed several plotting methods to visually explore the dataset, allowing us to gain a deeper understanding of its characteristics and determine the most appropriate preprocessing steps.
+
+Based on our observations from the plots and utilizing other relevant commands, we took steps to address any issues such as missing or outlier values. We removed these problematic instances from the dataset to prevent them from negatively impacting the accuracy of our predictions. Furthermore, we performed data transformation, which involved normalizing and discretizing certain attributes. This process aimed to ensure that all attributes carried equal weight and simplified data handling during subsequent data mining tasks.
+
+Through these efforts, we strived to create an efficient and reliable predictive model that could effectively assist individuals in taking proactive measures to lead healthier lives.
+
+Following the preprocessing stage, we proceeded to apply various methods, including the Gini index, gain ratio, and information gain, using different partitioning techniques. We carefully evaluated the outcomes of each method to determine the most suitable approach for our specific dataset ,then finally group it in the table below.
+
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+|             | 70% training set 30% testing set: | 80% training set 20% testing set: | 85% training set 15% testing set: |
++=============+===================================+===================================+===================================+
+| IG          | IG RATIO                          | IG index                          | IG                                |
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+| Accuracy    | 0.7748                            | 0.8079                            | 0.7748                            |
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+| Precision   | 0.7067                            | 0.7667                            | 0.7067                            |
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+| Sensitivity | 0.9545                            | 0.8961                            | 0.9545                            |
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+| Specificity | 0.5878                            | 0.7162                            | 0.5878                            |
++-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+
+After thorough analysis, we determined that the gain ratio method with (85% training set and 15% testing set) yielded the most accurate and reliable results for our dataset. Therefore, we confidently selected it as the optimal method for constructing a decision tree.
+
+As discussed, Gain ratio is considered superior to information gain in certain scenarios as it addresses the potential bias introduced by attributes with high cardinality or numerous distinct values. Information gain measures the reduction in uncertainty achieved by splitting data based on an attribute, but it tends to favor attributes with more distinct values or partitions, which can introduce more information.This partition generally performed best throughout all the methods due to the fact that the model would have more data to train on, thus being more accurate.
+
+In contrast, the gain ratio normalizes the information gain by considering the intrinsic information of the attribute. It takes into account the number of distinct values an attribute can have, penalizing attributes with high cardinality. By doing so, gain ratio provides a fairer comparison among attributes, considering both their information gain and the partitions they create.
+
+The decision tree model yielded the following metrics:
+
+-   Accuracy: The accuracy of the model is 84.28%.
+
+-   Precision: The precision of the model is 79.25%.
+
+-   Sensitivity: The sensitivity (or recall) of the model is 96.55%.
+
+-   Specificity: The specificity of the model is 69.44%.
+
+From the analysis of the decision tree, several findings can be observed:
+
+-   Number of Leaf Nodes: The decision tree consists of 10 leaf nodes, indicating that 10 rules or distinct conditions have been extracted from the tree.
+
+-   Important Attributes: The decision nodes in the tree utilize the attributes of age, average glucose, and hypertension to make decisions and classify instances.
+
+-   Age and Stroke: The analysis reveals that older individuals are more likely to have a stroke. This suggests that age is an important factor in determining the risk of stroke.
+
+-   Hypertension and Stroke: The tree also indicates that individuals with higher levels of hypertension are more prone to suffering from a stroke. This implies that hypertension is a significant contributing factor to stroke risk.
+
+-   Combined Impact: Furthermore, the findings suggest that individuals who have both hypertension and higher average glucose levels may be particularly susceptible to experiencing a stroke.
+
+These insights provide valuable information about the relationships between specific attributes and the occurrence of strokes. They can be utilized to raise awareness, inform preventive measures, and guide healthcare interventions for individuals at higher risk of stroke.
+
+## Clustering:
+
+For Clustering, we used K-means algorithm with 3 different K to find the optimal number of clusters, we calculated the average silhouette width for each K, and we concluded the following
+
+results:
+
++-----------------------------------------------+----------------+----------------+-----------------+
+|                                               | **K-means**    |                |                 |
++-----------------------------------------------+----------------+----------------+-----------------+
+| **Number of clusters**                        | **K=2**        | **K=3**        | **K=5**         |
++-----------------------------------------------+----------------+----------------+-----------------+
+| **Average silhouette width for each cluster** | 0.53           | 0.63           | 0.59            |
++-----------------------------------------------+----------------+----------------+-----------------+
+| **total within-cluster sum of square**        | 2500.985       | 1232.939       | 670.6099        |
++-----------------------------------------------+----------------+----------------+-----------------+
+| **Average BCubed precision and recall**       | 0.5982604      | 0.5218951      | 0.4242592       |
++-----------------------------------------------+----------------+----------------+-----------------+
+| **Visualization**                             | ***Figure 1*** | ***Figure 6*** | ***Figure 10*** |
++-----------------------------------------------+----------------+----------------+-----------------+
+
+• Number of cluster(K)= 2, the average silhouette width=0.53
+
+• Number of cluster(K)= 3, the average silhouette width=0.63
+
+• Number of cluster(K)= 5, the average silhouette width=0.59
+
+Based on the analysis of the clustering results, it is evident that the choice of the number of clusters significantly impacts the quality of the clustering solution. The k-mean clustering approach aligns better with the nature of our dataset, which includes class labels indicating the presence or absence of a stroke (0 for no stroke and 1 for stroke). Therefore, the optimal number of clusters for this dataset is 2, despite the 3-mean clustering solution appearing visually better.
+
+The class labels in our dataset indicate that a binary classification problem is at hand, separating instances into two distinct categories: stroke and no stroke. Since the class labels suggest the existence of two clusters, it is more appropriate to choose a 2-mean clustering solution to accurately capture these distinct patterns.
+
+However, when evaluating the clustering results using metrics such as silhouette analysis, within-cluster sum of squares (WSS), and BCubed precision and recall, the 3-mean clustering solution may appear to have better performance. This discrepancy can be attributed to factors such as the inherent complexity of the data or the influence of other variables not directly captured by the class labels.
+
+While the 3-mean clustering solution visually appears superior, it is crucial to prioritize the alignment with the class labels and the nature of the problem at hand. Therefore, based on the stroke classification problem and the binary class labels, the 2-mean clustering solution is deemed better in this scenario.
+
+It is worth noting that the clustering algorithm's ability to identify three clusters might be influenced by other factors present in the dataset that are not explicitly captured by the class labels. These factors could introduce additional complexity and patterns that the clustering algorithm attempts to capture by suggesting three clusters. However, for the specific problem of stroke prediction, our numbers choose 30-mean clustering but the binary nature of the class labels suggests that a 2-mean clustering solution is more appropriate and aligned with the desired outcome.
+
+In conclusion, classification and clustering methods both serve an important part in machine learning. When considering our problem and dataset, it is recommended to utilize classification over clustering. This is due to the fact that classification is more suitable for predicting whether an individual will experience a stroke or not, which is our goal. Clustering can teach us more about our data and how the patients can be grouped based on common features, and by evaluating it to our ground truth (suffered a stroke or not) it can point out common attributes for each group, but it cannot predict whether an individual may suffer a stroke or not.
+
+## References:
+
+> [1] Utkarsh kumar, "Conditional Inference Trees in R Programming," *GeeksforGeeks*, Jul. 06, 2020. <https://www.geeksforgeeks.org/conditional-inference-trees-in-r-programming/>
+>
+> [2] B. Gorman, "Decision Trees in R using rpart," *www.gormanalysis.com*, Aug. 24, 2014[. https://www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/](.%20https:/www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/)
+>
+> [3] aleshunas, "Classification of data using decision tree and regression tree methods," *Webster.edu*, 2020. <http://mercury.webster.edu/aleshunas/R_learning_infrastructure/Classification%20of%20data%20using%20decision%20tree%20and%20regression%20tree%20methods.html>
+>
+> [4] A. Thevapalan and J. Le, "R Decision Trees Tutorial: Examples & Code in R for Regression & Classification," *www.datacamp.com*, Jan. 27, 2023. <https://www.datacamp.com/tutorial/decision-trees-R>
+>
+> [5] S. HP, "Cluster analysis":, *MLearning.ai*, Mar. 05, 2021. <https://medium.com/mlearning-ai/cluster-analysis-6757d6c6acc9>
+>
+> [6]gkolluristudy, "Data Mining - Cluster Analysis," *GeeksforGeeks*, Sep. 19, 2021. <https://www.geeksforgeeks.org/data-mining-cluster-analysis/>
+
+Clustering sources:
+
+> Packages:
+>
+> -   ggplot2: is a plotting package that provides helpful commands to create complex plots from data in a data frame.
+>
+> -   factoextra: flexible and easy-to-use methods to extract quickly, in a human readable standard data format.
+>
+> -   DPBBM: Beta-binomial Mixture Model is used to infer the pattern from count data. It can be used for clustering of RNA methylation sequencing data.
+
+> Libraires:
+>
+> -   ggplot2: the grammar of graphics.
+>
+> -   factoextra: to visualize the cluster.
+>
+> -   cluster: to use silhouette method.
+
+> Methods:
+>
+> -   as.numeric(): transformed into numeric types before clustering.
+>
+> -   as.integer(): helps return their values as integer objects.
+>
+> -   rownames(): to set rownames in the data frame
+>
+> -   Kmeans(): run kmeans clustering to find N clusters.
+>
+> -   fviz_cluster(): visualization of the clusters.
+>
+> -   Silhouette(): calculate the average for each cluster.
+>
+> -   fviz_silhouette(): visualization of clusters Silhouette and average Silhouette.
+>
+> -   fviz_nbclust(): finding and visualization the best number of clusters.
+>
+> -   BCubed_metric(): F metric parameter which used to **average** precision and recall.

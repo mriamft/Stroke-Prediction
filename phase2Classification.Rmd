@@ -1,11 +1,144 @@
 ---
-editor_options: 
-  markdown: 
-    wrap: 72
+output:
+  html_document: default
+  pdf_document: default
 ---
+# 1- Problem:
+Stroke is the second-leading cause of death and the most common global cause of disability. WHO estimates that 1 in 4 persons may experience a stroke during their lifetime; because strokes can occur at any time and to anyone, regardless of age, we have chosen to concentrate on this dataset. Given the sudden nature of strokes, we intend to investigate and analyze the data to provide predictions on what are some risk factors and shed light on the types of people who are likely to experience one, allowing for future changes in lives. This dataset is used to predict whether a patient is likely to get stroke based on the input parameters like gender, age,bmi, various diseases such as hypertension and heart disease, smoking status,marital  status and residence type. Each row in the data provides relavant information about the patient.
+
+# 2- Data mining task:
+Data mining plays a crucial role in predicting the probability of having a stroke through classification and clustering techniques. By applying data mining algorithms to a large dataset containing various health-related features, valuable patterns and relationships can be discovered. In the classification aspect, data mining aids in building models that can accurately classify individuals into different categories, such as 1 for "stroke" or 0 for "non-stroke," based on their attributes and risk factors. This helps in identifying individuals who are more likely to experience a stroke, enabling proactive interventions and preventive measures. On the other hand, clustering techniques assist in identifying groups or clusters of individuals with similar characteristics, allowing for a deeper understanding of stroke risk factors and potential subgroups within the population. By leveraging data mining in stroke prediction, healthcare professionals and researchers can gain valuable insights and develop effective strategies for stroke prevention, early detection, and personalized treatments.
+
+
+# 3- Dataset information:
+Our dataset source is : https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset
 
 ```{r}
 data<-read.csv("Dataset/healthcare-dataset-stroke-data.csv")
+```
+
+```{r}
+head(data)
+```
+
+## Genral info about the dataset:
+Among the 5110 objects in our dataset sample, 12 attributes are used to describe them.
+Our characteristics' values are utilized to identify their types, such as the nominal for id, binary for gender, and numeric for age.  
+Additionally, we had two attributes for hypertension and heart disease that took two values 1 and 0 to indicate whether they are sufferd from it or not, respectively. The last attribute, **"stroke"**, was described by two values 0 and 1 for the possibility of having a stroke or not as a result of analysis of the previous data, , which is what we aim to train our model to predict.
+
+## Data dictionary:
+<table>
+<tr>
+    <th>Attribute Name</th>
+	<th>Description</th>
+	<th>Data Type</th> 
+	<th>Possible values</th> 
+</tr>
+
+<tr>
+    <td>id</td> 
+    <td>Unique id of the patient</td>
+	<td>Nominal</td>
+	<td>Range between 67-72940</td>
+	
+</tr>
+
+<tr>
+    <td>gender</td> 
+    <td>Gender of the patient</td>
+	<td>Binary</td>	
+    <td>Female <br> Male</td>   
+</tr>
+
+<tr>
+    <td>age</td>
+    <td>Age of the patient</td>
+	<td>Numeric</td>	
+    <td>Range between 0.08-82</td>   
+</tr>
+
+<tr>
+	<td>hypertension</td>
+    <td>Hypertension binary feature, 1 means the patient has hypertension, 0 means they do not.</td> 
+	<td>Binary</td>
+    <td>0,1</td>   
+</tr>
+
+<tr>
+	<td>heart_disease</td>
+    <td>Heart disease binary feature, 1 means the patient has heart disease, 0 means they do not.</td> 
+	<td>Binary</td>
+    <td>0,1</td>   
+</tr>
+
+<tr>
+	<td>ever_married</td> 
+    <td>Has the patient ever been married?</td> 
+	<td>Binary</td>
+    <td>Yes <br> No</td>   
+</tr>
+
+<tr>
+    <td>work_type</td> 
+    <td>Work type of the patient</td> 
+	<td>Nominal</td>
+    <td>"Private" <br> "Self-employed" <br>"children" <br>"Govt_job" <br>"Never_worked"</td>
+    
+    
+    
+    
+    
+</tr>
+
+<tr>
+    <td>residence_type</td>
+    <td>Residence type of the patient</td> 
+	<td>Binary</td>
+    <td>"Urban" <br> "Rural"</td>   
+</tr>
+
+<tr>
+	<td>avg_glucose_level</td>
+    <td>Average glucose level in blood</td> 
+	<td>Numeric</td>
+    <td>Range between 55.1-272</td>   
+</tr>
+
+<tr>
+	<td>bmi</td>
+    <td>Body Mass Index</td> 
+	<td>Numeric</td>
+    <td> Range between 10.3-97.6 </td>   
+
+</tr>
+
+<tr>
+	<td>smoking_status</td>
+    <td>Smoking status of the patient</td> 
+    <td>Nominal</td>  
+	<td>"never smoked" <br> "Unknown" <br> "formerly smoked" <br> "smokes"</td>
+	
+</tr>
+
+<tr>
+	<td>stroke</td>
+    <td>Stroke event, 1 means the patient had a stroke, 0 means not</td> 
+    <td>Binary</td>  
+	<td>0,1</td>
+	
+</tr>
+
+</table>
+str(data)
+```{r}
+str(data)
+```
+
+```{r}
+#Number of rows
+nrow(data)
+#Number of column
+ncol(data)
 ```
 
 ```{r}
@@ -31,17 +164,131 @@ library(ggplot2)
 library(gridExtra)
 ```
 
-Cleaning:
+# 4- Understanding the data through graph representations:
+```{r}
+# check gender
+data <- data %>% filter(gender != "Other")
+ggplot(data, aes(x = gender, fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(fill = "STROKE", title= "Incident of stroke between genders")
+```
+<font size=3>The total number of strokes by gender in our data set are shown in the bar chart.
+It demonstrates if there is a correlation between gender and the frequency of stroke cases in each gender. We can see that men are slightly more likely than women to experience a stroke. </font>
+----------------------- 
+```{r}
+tab <- data$work_type %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt ,main= "Chart of employement status") # plot pie chart
+```
+<font size=3>This pie chart illustrates the various worker types according to the employment sector type in our data collection.
+The summarization of our data collection's is nominal data, which shows people who work for the private sector are present at a higher percentages (57.2%) than those who work for the self-employed sector (16%) and so on. </font>
+---
 
 ```{r}
+ggplot(data) + geom_point(mapping = aes(y = age, x = stroke, color = stroke ), alpha =0.9 )+ 
+  labs(title = "Distribution of Stroke status by age" ) +
+  theme( plot.title = element_text(size = 14, face = "bold"), legend.position = "none", axis.line = element_line(size = 1), axis.ticks = element_line() )
+```
+<font size=3>The above chart shows the age distribution of stroke victims. 
+Our results showed a correlation between age and stroke, showing a greater likelihood of stroke with older age.
+--- 
+
+
+```{r}
+ggplot(data, aes(x = ever_married, fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(fill = "STROKE", title="Correlation between stroke occurence and marrige status")
+```
+<font size=3>The correlation between having a stroke and being married is illustrated in a bar graph. We discovered that people who are married have a higher risk of having a stroke than people who are not married.
+---
+
+```{r}
+# Histogram of Average Glucose Level with normal distribution overlay
+histglucose <- hist(data$avg_glucose_level,xlim=c(0,300),
+                main="Histogram of Avg. Glucose with Normal Distribution Overlay",
+                xlab="Avg. Glucose",las=1)
+xfit <- seq(min(data$avg_glucose_level),max(data$avg_glucose_level))
+yfit <- dnorm(xfit,mean=mean(data$avg_glucose_level),sd=sd(data$avg_glucose_level))
+yfit <- yfit*diff(histglucose$mids[1:2])*length(data$avg_glucose_level)
+lines(xfit,yfit,col="red",lwd=2)
+```
+<font size=3> The average glucose levels of the patients in the study are right skewed, with mean of 106.15 from the summary() function earlier. We notice that there is an increase in frequency when the glucose level reaches 200, which makes us wonder if this elevation is a factor for a stroke. </font>
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+# 4- Data Preprocessing:
+### 4.1 Remove Null values:
+Null values can cause issues when performing data analysis or building machine learning models, as they can lead to inaccurate results or errors, therefore we will remove them.
+```{r}
+# Change "N/A" to actual NULL
 data$bmi[data$bmi=="N/A"] <-NA
+```
+
+```{r}
+# Checking missing values
 sum(is.na(data))
+```
+
+```{r}
+
 # Converting bmi to numeric
 data$bmi <- as.numeric(as.character(data$bmi))
 # Checking bmi type
 class(data$bmi)
+
 # Replacing null values with the mean
 data$bmi[is.na(data$bmi)]<-mean(data$bmi, na.rm = TRUE)
+
+# Missing values
+sum(is.na(data))
+```
+
+```{r}
 
 #Remove outliers:
 #install outliers package
