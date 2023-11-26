@@ -383,6 +383,10 @@ The classification technique involved splitting the dataset into two subsets: Tr
 
 To evaluate the effectiveness of our model, we utilized a confusion matrix and measured both accuracy and cost-sensitive metrics on the dataset.
 
+For clustering, it’s an unsupervised learning so we should remove class label, We used k-means approach clustering algorithm that split our data into groups that have a high intra-class similarity and low inter-class similarity, it chooses a random centers and assign each object to the cluster with the nearest center based on Euclidean distance, and iteratively updating the cluster centroids until we reach the appropriate center for each cluster, we used it because it suitable for large datasets and simpler than the other algorithms. 
+By using the same set of attributes for both clustering and classification, we can effectively compare the results and assess the similarities or differences in the patterns identified by the two techniques. This comparison can provide insights into the effectiveness of each method for analyzing and categorizing the data. Therefore, we use the same attributes that have been used in classification,
+
+
 ## 5.1 Classification:
 
 Classification is supervised learning, therefore we need training data to train the model, and test data to evaluate its' performance. We tried three different size of partitions and three attribute selection measures: Information gain (IG), Gain ratio (IG ration), and Gini index.
