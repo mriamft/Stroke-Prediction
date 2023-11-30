@@ -82,6 +82,25 @@ ncol(data)
 ```
 
 ```{r}
+library(Hmisc)
+describe(data)
+#Five number summary:
+summary(data)
+library(dplyr)
+data %>% summarise_if(is.numeric, var)
+```
+
+The provided summary data provides information on various variables in a dataset. The dataset includes information on ID, gender, age, hypertension, heart disease, marital status, work type, residence type, average glucose level, body mass index (BMI), smoking status, and stroke occurrence.
+
+Analyzing the summary, we can observe that the dataset consists of 5,109 observations or rows. Regarding gender distribution, the majority of individuals in the dataset are female (2,994), followed by males (2,115), with only one observation classified as "other." The age range of the individuals in the dataset spans from a minimum of 0.08 to a maximum of 82 years, with a mean age of 43.23. Approximately 9.75% of the individuals have hypertension, and around 5.40% have heart disease.
+
+Examining the marital status variable, the majority of individuals are married (3,353), while a smaller proportion are not married (1,757). The work type variable indicates that the most common category is "private" (2,925), followed by "self-employed" (819), "govt_job" (657), and "children" (687). In terms of residence type, the dataset is roughly evenly split between rural (2,514) and urban (2,596) areas.
+
+The average glucose level of the individuals ranges from a minimum of 55.12 to a maximum of 271.74, with a mean of 106.15. The BMI variable contains missing values (N/A) for 201 observations, and the remaining values vary between 26.1 and 28.7, with mode values of 28.4 and 26.7. Regarding smoking status, the majority of individuals have an unknown smoking status (1,544), followed by "never smoked" (1,892), "formerly smoked" (885), and "smokes" (789). Finally, the stroke variable indicates that 4.87% of the individuals in the dataset experienced a stroke.
+
+In summary, the dataset consists of a diverse population in terms of gender, age, and various health-related factors. It includes information on hypertension, heart disease, and stroke occurrences, as well as details on lifestyle factors such as marital status, work type, residence type, and smoking status. The dataset can be used for further analysis and exploration of factors associated with stroke occurrence and potential risk factors within the given population.
+
+```{r}
 # import necessary libraries
 library(tidyverse)   
 library(ggplot2)
@@ -101,7 +120,7 @@ library(dplyr)
 library(tidyr)
 library(readr)
 library(ggplot2)
-library(gridExtra)
+library(gridExtra) 
 ```
 
 # 4- Understanding the data through graph representations:
@@ -310,7 +329,7 @@ After the process of normalizing and cleaning the data, we found that there is n
 
 We will reduce the number of input variables for our predictive model using a feature selection tool called Recursive Feature Elimination(RFE), which is a widely used algorithm for selecting features that are most relevant in predicting the target variable (stroke in our case) in a predictive model, as well as varImp function which calculates variable importance for objects
 
-```{r}
+```{r, cache=TRUE}
 # ensure results are repeatable
 set.seed(7)
 # load the library
@@ -329,7 +348,7 @@ print(importance)
 plot(importance)
 ```
 
-```{r}
+```{r, cache=TRUE}
 # ensure the results are repeatable
 set.seed(7)
 # define the control using a random forest selection function
@@ -344,11 +363,11 @@ predictors(results)
 plot(results, type=c("g", "o"))
 ```
 
-Both methods show that the **Residence type, gender, and id** attributes have little relevance in predicting a stroke. Therefore, we will remove them.
+Both methods show that the **age, hypertension, ever_married, avg_glucose_level** attributes are the most important factors in relation to stroke. Therefore, we will remove all the other attributes with the low importance (id, Residence_type, gender, heart_disease, bmi, work_type, smoking_status)
 
 ```{r}
-#delete id,gender,residence type coloumns
-data <-data[,!names(data) %in% c("id", "gender", "Residence_type")]
+#delete the unimportant features coloumns
+data <-data[,!names(data) %in% c("id","Residence_type","gender","heart_disease","bmi","work_type","smoking_status")]
 head(data)
 ```
 
@@ -362,13 +381,9 @@ Addressing the class imbalance issue, there are various approaches available. Co
 # upscaling the data
 library('caret')
 library('dplyr')
-data<-upSample(data[,-9],data$stroke, yname="stroke")
-#data<-downSample(data[,-9],data$stroke, yname="stroke")
+data<-upSample(data[,-5],data$stroke, yname="stroke")
 plot(data$stroke)
 data$stroke<- as.factor(data$stroke)
-## copying the data into 2 data frames, one for classification and one for clustering which will be used later
-data_class <- data.frame(data)
-data_cluster <- data.frame(data)
 #Finally, checking overall
 head(data)
 #Number of rows
@@ -383,17 +398,22 @@ The classification technique involved splitting the dataset into two subsets: Tr
 
 To evaluate the effectiveness of our model, we utilized a confusion matrix and measured both accuracy and cost-sensitive metrics on the dataset.
 
-For clustering, it’s an unsupervised learning so we should remove class label, We used k-means approach clustering algorithm that split our data into groups that have a high intra-class similarity and low inter-class similarity, it chooses a random centers and assign each object to the cluster with the nearest center based on Euclidean distance, and iteratively updating the cluster centroids until we reach the appropriate center for each cluster, we used it because it suitable for large datasets and simpler than the other algorithms. 
-By using the same set of attributes for both clustering and classification, we can effectively compare the results and assess the similarities or differences in the patterns identified by the two techniques. This comparison can provide insights into the effectiveness of each method for analyzing and categorizing the data. Therefore, we use the same attributes that have been used in classification,
+For clustering, it's an unsupervised learning so we should remove class label, We used k-means approach clustering algorithm that split our data into groups that have a high intra-class similarity and low inter-class similarity, it chooses a random centers and assign each object to the cluster with the nearest center based on Euclidean distance, and iteratively updating the cluster centroids until we reach the appropriate center for each cluster, we used it because it suitable for large datasets and simpler than the other algorithms. By using the same set of attributes for both clustering and classification, we can effectively compare the results and assess the similarities or differences in the patterns identified by the two techniques. This comparison can provide insights into the effectiveness of each method for analyzing and categorizing the data. Therefore, we use the same attributes that have been used in classification,
 
+```{r}
+## copying the data into 2 data frames, one for classification and one for clustering which will be used later
+data_class <- data.frame(data)
+data_cluster <- data.frame(data)
+```
 
 ## 5.1 Classification:
 
 Classification is supervised learning, therefore we need training data to train the model, and test data to evaluate its' performance. We tried three different size of partitions and three attribute selection measures: Information gain (IG), Gain ratio (IG ration), and Gini index.
 
-Since our dataset size is limited, we set the value of replace attribute "TRUE" so the tuples of the training data will be selected with replacement and the rest will be included in the test data portion. We always gave the training subset the biggest portion of our dataset because our model's ability to predict the class label correctly for new data is dependent on the constructing and training of the model. Our model -represented by a decision tree algorithm- needs to be fed with large enough data to be able to build the rules correctly. So when we test the model on the test data, it can predict the labels easily and accurately. Choosing the attributes involved in classification was based on the results of feature selection. We specifically chose the first four attributes based on the results obtained. We also used a balanced sample of our data consisting of 1000 tuples to create a comprehensible tree:
+We always gave the training subset the biggest portion of our dataset because our model's ability to predict the class label correctly for new data is dependent on the constructing and training of the model. Our model -represented by a decision tree algorithm- needs to be fed with large enough data to be able to build the rules correctly. So when we test the model on the test data, it can predict the labels easily and accurately. We used a balanced sample of our data consisting of 1000 tuples (which will be later split into training and testing) to create a comprehensible tree:
 
-```{r}
+```{r, cache=TRUE}
+##define formula that takes stroke in relation to all the other features (easier to use later on)
 myFormula <- stroke ~ age + hypertension +ever_married+avg_glucose_level
 data_class <- data_class %>%group_by(stroke) %>% sample_n(size=500)
 ```
@@ -412,13 +432,15 @@ To apply this, we used the C5.0.default method from the "C50" package. This mode
 
 #### 1-partition the data into ( 70% training, 30% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 70% of data for training, 30% of data for testing
 library('C50')
+library('caTools')
+
 set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+sample <- sample.split(data_class$stroke, SplitRatio = 0.7)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the c5.0 gain ratio tree
 strokeTree <- C5.0(myFormula, data=trainData)
@@ -426,12 +448,12 @@ summary(strokeTree)
 plot(strokeTree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the c5.0 gain ratio tree on the test data
-testPred <- predict(strokeTree, newdata = testData)
+testPred <- predict(strokeTree, newdata = testData)  
 ```
 
-```{r}
+```{r, cache=TRUE}
 #create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -442,17 +464,17 @@ as.table(results)
 as.matrix(results)
 as.matrix(results, what = "overall")
 as.matrix(results, what = "classes")
-print(results)
+print(results)  
 ```
 
 #### 2-partition the data into ( 80% training, 20% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 80% of data for training, 20% of data for testing
 set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+sample <- sample.split(data_class$stroke, SplitRatio = 0.8)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the c5.0 gain ratio tree
 strokeTree <- C5.0(myFormula, data=trainData)
@@ -460,12 +482,12 @@ summary(strokeTree)
 plot(strokeTree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the c5.0 gain ratio tree on the test data
 testPred <- predict(strokeTree, newdata = testData)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -481,13 +503,13 @@ print(results)
 
 #### 3-partition the data into ( 85% training, 15% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 85% of data for training, 15% of data for testing
 trctrl <- trainControl(method = "cv", number = 10, savePredictions=TRUE)
-set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.85)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the c5.0 gain ratio tree
 strokeTree <- C5.0(myFormula, data=trainData,)
@@ -495,12 +517,12 @@ summary(strokeTree)
 plot(strokeTree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the c5.0 gain ratio tree on the test data
 testPred <- predict(strokeTree, newdata = testData)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -519,26 +541,167 @@ print(results)
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
 |                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
 +=================+====================================+====================================+====================================+
-| **Accuracy**    | 0.8079                             | 0.8365                             | 0.8428                             |
+| **Accuracy**    | 0.7967                             | 0.795                              | 0.78                               |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Precision**   | 0.7667                             | 0.8154                             | 0.7925                             |
+| **Precision**   | 0.7432                             | 0.7323                             | 0.7442                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Sensitivity** | 0.8961                             | 0.9138                             | 0.9655                             |
+| **Sensitivity** | 0.9067                             | 0.9300                             | 0.8533                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Specificity** | 0.7162                             | 0.7391                             | 0.6944                             |
+| **Specificity** | 0.6867                             | 0.6600                             | 0.7067                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
 
-Among these partitioning ratios, the model trained on the 85% training set and 15% testing set achieved the highest accuracy (0.8428), followed by the model trained on the 80% training set and 20% testing set (0.8365), and the model trained on the 70% training set and 30% testing set (0.8079).
+         
+Among these partitioning ratios, the model trained on the 70% training set and 30% testing set achieved the highest accuracy (0.7967), followed by the model trained on the 80% training set and 20% testing set (0.795), and the model trained on the 85% training set and 15% testing set (0.78).
 
-In terms of precision, the model trained on the 80% training set and 20% testing set achieved the highest precision (0.8154), followed by the model trained on the 85% training set and 15% testing set (0.7925), and the model trained on the 70% training set and 30% testing set (0.7667).
+In terms of precision, the model trained on the 85% training set and 15% testing set achieved the highest precision (0.7442), followed by the model trained on the 70% training set and 30% testing set (0.7432), and the model trained on the 80% training set and 20% testing set (0.7323).
 
-For sensitivity, the model trained on the 85% training set and 15% testing set had the highest sensitivity (0.9655), followed by the model trained on the 80% training set and 20% testing set (0.9138), and the model trained on the 70% training set and 30% testing set (0.8961).
+For sensitivity, the model trained on the 80% training set and 20% testing set had the highest sensitivity (0.9300), followed by the model trained on the 70% training set and 30% testing set (0.9067), and the model trained on the 85% training set and 15% testing set (0.8533).
 
-In terms of specificity, the model trained on the 80% training set and 20% testing set achieved the highest specificity (0.7391), followed by the model trained on the 70% training set and 30% testing set (0.7162), and the model trained on the 85% training set and 15% testing set (0.6944).
+In terms of specificity, the model trained on the 85% training set and 15% testing set achieved the highest specificity (0.7067), followed by the model trained on the 70% training set and 30% testing set (0.6867), and the model trained on the 80% training set and 20% testing set (0.6600).
 
-Based on these results, the model trained on the 85% training set and 15% testing set appears to be the best partitioning ratio, as it showed the highest accuracy and a balanced performance in terms of precision, sensitivity, and specificity.
+Based on these results, the model trained on the 70% training set and 30% testing set appears to be the best partitioning ratio, as it showed the highest accuracy, as well as having the highest results in terms of precision, sensitivity, and specificity. The 85% training set and 15% testing set had good results, but had a considerably low sensitivity compared to the others. 
 
 Overall, the results obtained from the decision tree using the gain ratio as the splitting criterion are realistic and promising. The accuracy values are reasonably high, indicating that the model can make correct predictions on the testing data. The precision, sensitivity, and specificity measures also demonstrate a good balance between correctly identifying the positive instances, correctly identifying the negative instances, and avoiding false positives and false negatives.
+
+### -Gini index (rpart):
+
+Gini index is a measure of impurity or the degree of disorder in a dataset. It is commonly used in decision tree algorithms to evaluate the quality of a split when constructing the tree.
+
+When building a decision tree, each potential split is assessed using the Gini index. The Gini index calculates the probability of misclassifying a randomly chosen element from a dataset if it were randomly labeled according to the distribution of classes in that subset. A lower Gini index indicates a more pure or homogeneous subset, meaning that the classes within that subset are similar.
+
+To use the Gini index in a decision tree, the algorithm considers various potential splits based on different features in the dataset. It calculates the Gini index for each split and selects the one with the lowest value. The chosen split results in the highest possible purity or homogeneity of the resulting subsets.
+
+For Gini index we used Rpart which is a powerful machine learning library in R that is used for building classification and regression trees. This library implements recursive partitioning and is very easy to use. Rpart has many useful methods which assist us in building our model, for example rpart() for constructing the model and rpart.plot() for representing the tree
+
+#### 1-partition the data into ( 70% training, 30% testing):
+
+```{r, cache=TRUE}
+#splitting 70% of data for training, 30% of data for testing
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.7)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r, cache=TRUE}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r, cache=TRUE}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### 2-partition the data into ( 80% training, 20% testing):
+
+```{r, cache=TRUE}
+#splitting 80% of data for training, 20% of data for testing
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.8)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r, cache=TRUE}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r, cache=TRUE}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+### 3-partition the data into ( 85% training, 15% testing):
+
+```{r, cache=TRUE}
+#splitting 85% of data for training, 15% of data for testing
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.85)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
+
+#train using the trainData and create the rpart gini index tree
+library('rpart')
+library('rpart.plot')
+tree <- rpart(myFormula, data = trainData,method = 'class')
+rpart.plot(tree)
+```
+
+```{r, cache=TRUE}
+#make predictions using the rpart gini index tree on the test data
+testPred <- predict(tree, newdata = testData,type = 'class')
+```
+
+```{r, cache=TRUE}
+##create confusion matrix to evaluate the model's performance
+library(caret)
+results <- confusionMatrix(testPred, testData$stroke, positive= "1")
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+```
+
+#### Now let's compare between the different partitions results in GINI INDEX:
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.74                               | 0.78                               | 0.74                               |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.6875                             | 0.7414                             | 0.7045                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.8800                             | 0.8600                             | 0.8267                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.6000                             | 0.7000                             | 0.6533                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+
+Looking at the accuracy values, the model trained on the 80% training set and tested on the 20% testing set achieved the highest accuracy (0.78). Both the models trained on the 85% training set and 15% testing set and the 70% training set and 30% testing set had the same accuracy (0.74).
+
+In terms of precision, which measures the proportion of correctly predicted positive instances, the model trained on the 80% training set and tested on the 20% testing set also obtained the highest precision (0.7414), followed by the model trained on the 85% training set and 15% testing set (0.7045), and the model trained on the 70% training set and 30% testing set (0.6875).
+
+For sensitivity, which represents the ability to correctly identify positive instances, the model trained on the 70% training set and 30% testing set had the highest sensitivity (0.8800), followed by the models trained on the 80% training set and 20% testing set with a sensitivity of (0.8600), and the 85% training set and 15% testing set with a sensitivity of (0.8267).
+
+In terms of specificity, which measures the ability to correctly identify negative instances, the model trained on the 80% training set and 20% testing set achieved the highest specificity (0.7000), followed by the model trained on the 85% training set and 15% testing set (0.6533), and the model trained on the 70% training set and 30% testing set (0.6000).
+
+Based on these results, the model trained on the 80% training set and 20% testing set appears to be the best partitioning ratio, as it showed the highest accuracy, as well as having the highest results in terms of precision, sensitivity, and specificity. It should be noted that even though the models trained on the 85% training set and 15% testing set and the 70% training set and 30% testing set achieved the same accuracy, the 85 % training set 15% testing set is a better model because it can predict more accurately based on the results of precision, sensitivity and specificity.
 
 ### -Information gain (ctree):
 
@@ -562,23 +725,18 @@ data_class$age= cut(data_class$age, breaks= seq(0,1, by=0.2),right=TRUE)
 cutPoints(data_class$avg_glucose_level,data_class$stroke)
 data_class$avg_glucose_level	= cut(data_class$avg_glucose_level, breaks= seq(0,1, by=0.5),right=TRUE)
 
-cutPoints(data_class$bmi,data_class$stroke)
-data_class$bmi	= cut(data_class$bmi, breaks= seq(0,0.7, by=0.2),right=TRUE)
 data_class$hypertension <- as.factor(data_class$hypertension )
-data_class$heart_disease <- as.factor(data_class$heart_disease )
 data_class$ever_married   <- as.factor(data_class$ever_married  )
-data_class$work_type   <- as.factor(data_class$work_type  )
-data_class$smoking_status <- as.factor(data_class$smoking_status )
 ```
 
 #### 1-partition the data into ( 70% training, 30% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 70% of data for training, 30% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.7)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the ctree information gain tree
 library(party)
@@ -590,12 +748,12 @@ plot(stroke_ctree,type="simple")
 plot(stroke_ctree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
 ```
 
-```{r}
+```{r, cache=TRUE}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -611,12 +769,12 @@ print(results)
 
 #### 2-partition the data into ( 80% training, 20% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 80% of data for training, 20% of data for testing
-set.seed(321)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.8)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the ctree information gain tree
 library(party)
@@ -628,12 +786,12 @@ plot(stroke_ctree,type="simple")
 plot(stroke_ctree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
 ```
 
-```{r}
+```{r, cache=TRUE}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -649,12 +807,12 @@ print(results)
 
 #### 3-partition the data into ( 85% training, 15% testing):
 
-```{r}
+```{r, cache=TRUE}
 #splitting 85% of data for training, 15% of data for testing
-set.seed(111)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
+set.seed(123)
+sample <- sample.split(data_class$stroke, SplitRatio = 0.85)
+trainData  <- subset(data_class, sample == TRUE)
+testData   <- subset(data_class, sample == FALSE)
 
 #train using the trainData and create the ctree information gain tree
 library(party)
@@ -666,12 +824,12 @@ plot(stroke_ctree,type="simple")
 plot(stroke_ctree)
 ```
 
-```{r}
+```{r, cache=TRUE}
 #make predictions using the ctree information gain tree on the test data
 testPred <- predict(stroke_ctree, newdata = testData)
 ```
 
-```{r}
+```{r, cache=TRUE}
 ##create confusion matrix to evaluate the model's performance
 library(caret)
 results <- confusionMatrix(testPred, testData$stroke, positive= "1")
@@ -690,165 +848,27 @@ print(results)
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
 |                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
 +=================+====================================+====================================+====================================+
-| **Accuracy**    | 0.7748                             | 0.781                              | 0.7984                             |
+| **Accuracy**    | 0.7433                             | 0.76                               | 0.7067                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Precision**   | 0.7067                             | 0.7241                             | 0.7468                             |
+| **Precision**   | 0.6780                             | 0.6970                             | 0.6505                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Sensitivity** | 0.9545                             | 0.9459                             | 0.9077                             |
+| **Sensitivity** | 0.9267                             | 0.9200                             | 0.8933                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Specificity** | 0.5878                             | 0.5960                             | 0.6875                             |
+| **Specificity** | 0.5600                             | 0.6000                             | 0.5200                             |
 +-----------------+------------------------------------+------------------------------------+------------------------------------+
 
-Among these partitioning ratios, the model trained on the 85% training set and 15% testing set achieved the highest accuracy (0.7984) among the three ratios, followed by the model trained on the 80% training set and 20% testing set with an accuracy of (0.781), and finally the 70% training set and 30% testing set with an accuracy of (0.7748)
 
-In terms of precision, the model trained on the 85% training set and 15% testing set obtained the highest precision (0.7468), followed by the model trained on the 80% training set and 20% testing set (0.7241), and the model trained on the 70% training set and 30% testing set (0.7067).
+Among these partitioning ratios, the model trained on the 80% training set and 20% testing achieved the highest accuracy (0.76), followed by the model trained on the 70% training set and 30% testing set (0.7433), followed by the model trained on the 85% training set and 15% testing set with an accuracy of (0.7067).
 
-For sensitivity, the model trained on the 70% training set and 30% testing set achieved the highest sensitivity (0.9545), followed by the models trained on the 80% training set and 20% testing set (0.9459), and the 85% training set and 15% testing set (0.9077).
+In terms of precision, the model trained on the 80% training set and 20% testing set obtained the highest precision (0.6970), followed by the model trained on the 70% training set and 30% testing set (0.6780), and the model trained on the 85% training set and 15% testing set (0.6505).
 
-In terms of specificity, the model trained on the 85% training set and 15% testing set obtained the highest specificity (0.6875), followed by the model trained on the 80% training set and 20% testing set (0.5960), and the model trained on the 70% training set and 30% testing set (0.5878).
+For sensitivity, the model trained on the 70% training set and 30% testing set achieved the highest sensitivity (0.9267), followed by the models trained on the 80% training set and 20% testing set (0.9200), and the 85% training set and 15% testing set (0.8933).
 
-Based on these results, both the models trained on the 85% training set and 15% testing set, and the 80% training set and 20% testing set show similar and better performance compared to the model trained on the 70% training set and 30% testing set. The accuracy, precision, sensitivity, and specificity measures are relatively high, indicating that the models can make reasonably accurate predictions.
+In terms of specificity, the model trained on the 80% training set and 20% testing set obtained the highest specificity (0.6000), followed by the model trained on the 70% training set and 30% testing set (0.5600), and the model trained on the 85% training set and 15% testing set (0.5200).
+
+Based on these results, the model trained on the 80% training set and 20% testing set showed the best performance. The accuracy, precision, sensitivity, and specificity measures are relatively high, indicating that the model can make reasonably accurate predictions.
 
 Overall, the results obtained from the decision tree using information gain as the splitting criterion are realistic and indicate good performance.
-
-### -Gini index (rpart):
-
-Gini index is a measure of impurity or the degree of disorder in a dataset. It is commonly used in decision tree algorithms to evaluate the quality of a split when constructing the tree.
-
-When building a decision tree, each potential split is assessed using the Gini index. The Gini index calculates the probability of misclassifying a randomly chosen element from a dataset if it were randomly labeled according to the distribution of classes in that subset. A lower Gini index indicates a more pure or homogeneous subset, meaning that the classes within that subset are similar.
-
-To use the Gini index in a decision tree, the algorithm considers various potential splits based on different features in the dataset. It calculates the Gini index for each split and selects the one with the lowest value. The chosen split results in the highest possible purity or homogeneity of the resulting subsets.
-
-For Gini index we used Rpart which is a powerful machine learning library in R that is used for building classification and regression trees. This library implements recursive partitioning and is very easy to use. Rpart has many useful methods which assist us in building our model, for example rpart() for constructing the model and rpart.plot() for representing the tree
-
-#### 1-partition the data into ( 70% training, 30% testing):
-
-```{r}
-#splitting 70% of data for training, 30% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.70 , 0.30))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
-
-#train using the trainData and create the rpart gini index tree
-library('rpart')
-library('rpart.plot')
-tree <- rpart(myFormula, data = trainData,method = 'class')
-rpart.plot(tree)
-```
-
-```{r}
-#make predictions using the rpart gini index tree on the test data
-testPred <- predict(tree, newdata = testData,type = 'class')
-```
-
-```{r}
-##create confusion matrix to evaluate the model's performance
-library(caret)
-results <- confusionMatrix(testPred, testData$stroke, positive= "1")
-acc <- results$overall["Accuracy"]*100
-acc
-results
-as.table(results)
-as.matrix(results)
-as.matrix(results, what = "overall")
-as.matrix(results, what = "classes")
-print(results)
-```
-
-#### 2-partition the data into ( 80% training, 20% testing):
-
-```{r}
-#splitting 80% of data for training, 20% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.80 , 0.20))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
-
-#train using the trainData and create the rpart gini index tree
-library('rpart')
-library('rpart.plot')
-tree <- rpart(myFormula, data = trainData,method = 'class')
-rpart.plot(tree)
-```
-
-```{r}
-#make predictions using the rpart gini index tree on the test data
-testPred <- predict(tree, newdata = testData,type = 'class')
-```
-
-```{r}
-##create confusion matrix to evaluate the model's performance
-library(caret)
-results <- confusionMatrix(testPred, testData$stroke, positive= "1")
-acc <- results$overall["Accuracy"]*100
-acc
-results
-as.table(results)
-as.matrix(results)
-as.matrix(results, what = "overall")
-as.matrix(results, what = "classes")
-print(results)
-```
-
-### 3-partition the data into ( 85% training, 15% testing):
-
-```{r}
-#splitting 85% of data for training, 15% of data for testing
-set.seed(1234)
-ind=sample (2, nrow(data_class), replace=TRUE, prob=c(0.85 , 0.15))
-trainData=data_class[ind==1,]
-testData=data_class[ind==2,]
-
-#train using the trainData and create the rpart gini index tree
-library('rpart')
-library('rpart.plot')
-tree <- rpart(myFormula, data = trainData,method = 'class')
-rpart.plot(tree)
-```
-
-```{r}
-#make predictions using the rpart gini index tree on the test data
-testPred <- predict(tree, newdata = testData,type = 'class')
-```
-
-```{r}
-##create confusion matrix to evaluate the model's performance
-library(caret)
-results <- confusionMatrix(testPred, testData$stroke, positive= "1")
-acc <- results$overall["Accuracy"]*100
-acc
-results
-as.table(results)
-as.matrix(results)
-as.matrix(results, what = "overall")
-as.matrix(results, what = "classes")
-print(results)
-```
-
-#### Now let's compare between the different partitions results in GINI INDEX:
-
-+-----------------+------------------------------------+------------------------------------+------------------------------------+
-|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
-+=================+====================================+====================================+====================================+
-| **Accuracy**    | 0.7748                             | 0.8029                             | 0.8176                             |
-+-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Precision**   | 0.7067                             | 0.7483                             | 0.7636                             |
-+-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Sensitivity** | 0.9545                             | 0.9741                             | 0.9655                             |
-+-----------------+------------------------------------+------------------------------------+------------------------------------+
-| **Specificity** | 0.5878                             | 0.5870                             | 0.6389                             |
-+-----------------+------------------------------------+------------------------------------+------------------------------------+
-
-Looking at the accuracy values, the model trained on the 85% training set and tested on the 15% testing set achieved the highest accuracy (0.8176), followed closely by the model trained on the 80% training set and 20% testing set (0.8029), and the model trained on the 70% training set and 30% testing set (0.7748).
-
-In terms of precision, which measures the proportion of correctly predicted positive instances, the model trained on the 85% training set and 15% testing set also obtained the highest precision (0.7636), followed by the model trained on the 80% training set and 20% testing set (0.7483), and the model trained on the 70% training set and 30% testing set (0.7067).
-
-For sensitivity, which represents the ability to correctly identify positive instances, the model trained on the 80% training set and 20% testing set had the highest sensitivity (0.9741), followed by the models trained on the 85% training set and 15% testing set with a sensitivity of (0.9655), and the 70% training set and 30% testing set,with a sensitivity of (0.9545).
-
-In terms of specificity, which measures the ability to correctly identify negative instances, the model trained on the 85% training set and 15% testing set achieved the highest specificity (0.6389), followed by the model trained on the 70% training set and 30% testing set (0.5878), and the model trained on the 80% training set and 20% testing set (0.5870).
-
-It is important to highlight that the decision tree constructed using the Gini index solely relied on the "age" attribute, which is not an ideal approach. Depending on a single attribute for building the decision tree can lead to a limited ability to predict accurately, and it is advisable to include additional relevant attributes. This raises the question of whether the "age" attribute truly has a stronger impact compared to other attributes in the feature selection results.
 
 ## 5.2 Clustering:
 
@@ -900,12 +920,11 @@ To determine the optimal choice of k, we try different key sizes, such as 2, 3, 
 
 ### - 2 Clusters:
 
-```{r}
+```{r, cache=TRUE}
 #######cluster k=2
 
 #calculate k-mean k=2
 km <- kmeans(data_cluster, 2, iter.max = 140 , algorithm="Lloyd", nstart=100)
-km
 
 
 
@@ -923,7 +942,7 @@ Additionally, the nearly identical sizes of the two clusters are a notable obser
 
 #### **Average silhouette:**
 
-```{r}
+```{r, cache=TRUE}
 #avg silhouette
 library(cluster)
 sil <- silhouette(km$cluster, dist(data_cluster))
@@ -937,33 +956,73 @@ A silhouette width above 0.5 is generally considered indicative of a reasonable 
 
 #### **Total within-cluster sum of square:**
 
-```{r}
+```{r, cache=TRUE}
 # Total sum of squares
 km$tot.withinss
 ```
 
 Total Sum of Squares (WSS), which serves as a metric for assessing the compactness of the clusters. However, the absolute value of WSS alone may not provide a definitive assessment of the clustering quality and should be interpreted relative to other evaluations.
 
-#### Average BCubed precision and recall
+#### BCubed precision and recall
 
-```{r}
-#bcubed metrix that take the avg of precision&recall
-library('DPBBM')
-c = km$cluster
-sr <- as.integer(sr)
-BCubed_metric(sr, km$cluster, 0.5)
+```{r, cache=TRUE}
+cluster_assignments <- c(km$cluster)
+ground_truth_labels <- c(data$stroke)
+datacluster <- data.frame(cluster = cluster_assignments, label = ground_truth_labels)
+
+# Function to calculate BCubed precision and recall
+calculate_bcubed_metrics <- function(datacluster) {
+  n <- nrow(datacluster)
+  precision_sum <- 0
+  recall_sum <- 0
+  
+  for (i in 1:n) {
+    cluster <- datacluster$cluster[i]
+    label <- datacluster$label[i]
+    
+    # Count the number of items from the same category within the same cluster
+same_category_same_cluster <- sum(datacluster$label[datacluster$cluster == cluster] == label)
+    
+# Count the total number of items in the same cluster
+total_same_cluster <- sum(datacluster$cluster == cluster)
+    
+# Count the total number of items with the same category
+total_same_category <- sum(datacluster$label == label)
+    
+# Calculate precision and recall for the current item and add them to the sums
+precision_sum <- precision_sum + same_category_same_cluster /total_same_cluster
+recall_sum <- recall_sum + same_category_same_cluster / total_same_category
+  }
+
+  # Calculate average precision and recall
+  precision <- precision_sum / n
+  recall <- recall_sum / n
+
+  return(list(precision = precision, recall = recall))
+}
+
+# Calculate BCubed precision and recall
+metrics <- calculate_bcubed_metrics(datacluster)
+
+# Extract precision and recall from the metrics
+precision <- metrics$precision
+recall <- metrics$recall
+
+# Print the results
+cat("BCubed Precision:", precision, "\n")
+cat("BCubed Recall:", recall, "\n")
 ```
 
-The function returns Bcubed F score of the clustering method. The higher the value is, the better performance the clustering method can get, our value (0.5982604) is generally desirable, as it indicates better agreement between the clustering results and the reference class label "stroke".
+This is a user defined function that calculates the BCubed precision and recall. The higher the values, the better performance the clustering method can get. Our precision (0.5404063) , as well as recall (0.669987) are generally desirable, as they indicate better agreement between the clustering results and the reference class label "stroke".
 
 ### - 3 Clusters:
 
-```{r}
+```{r, cache=TRUE}
 #######cluster k=3
 
 #calculate k-mean
 km <- kmeans(data_cluster, 3, iter.max = 140 , algorithm="Lloyd", nstart=100)
-km
+
 #plot k-mean
 fviz_cluster(list(data = data_cluster, cluster = km$cluster),
              ellipse.type = "norm", geom = "point", stand = FALSE,
@@ -976,7 +1035,7 @@ The clusters displayed clear separation from each other, indicating distinct gro
 
 #### **Average silhouette:**
 
-```{r}
+```{r, cache=TRUE}
 #avg silhouette
 library(cluster)
 sil <- silhouette(km$cluster, dist(data_cluster))
@@ -985,38 +1044,75 @@ rownames(sil) <- rownames(data_cluster)
 fviz_silhouette(sil)
 ```
 
-The average silhouette width, calculated as 0.63, indicates a reasonably high level of separation and cohesion within the clusters. As we mention before that a silhouette width above 0.5 is generally considered indicative of a reasonable degree of separation between data points within their assigned clusters. Therefore, the observed average silhouette width of 0.63 suggests that the clustering algorithm achieved a satisfactory level of discrimination. Comparing this value with the average silhouette width obtained from the 2-mean clustering solution would provide a better understanding of the relative improvement.
+The average silhouette width, calculated as 0.63, indicates a reasonably high level of separation and cohesion within the clusters. As we mention before that a silhouette width above 0.5 is generally considered indicative of a reasonable degree of separation between data points within their assigned clusters. Therefore, the observed average silhouette width of 0.62 suggests that the clustering algorithm achieved a satisfactory level of discrimination. Comparing this value with the average silhouette width obtained from the 2-mean clustering solution would provide a better understanding of the relative improvement.
 
 #### **Total within-cluster sum of square:**
 
-```{r}
+```{r, cache=TRUE}
 # Total sum of squares
 km$tot.withinss
 ```
 
 A lower WSS value generally indicates better clustering results, suggesting that the data points within each cluster are more tightly grouped around their centroids. And our value here is less than the 2-mean value which mean this clustering is better.
 
-#### **Average BCubed precision and recall**
+#### **BCubed precision and recall**
 
-```{r}
-#bcubed metrix that take the avg of precision&recall
-#install.packages('DPBBM')
-library('DPBBM')
-c = km$cluster
-sr <- as.integer(sr)
+```{r, cache=TRUE}
+cluster_assignments <- c(km$cluster)
+ground_truth_labels <- c(data$stroke)
+datacluster <- data.frame(cluster = cluster_assignments, label = ground_truth_labels)
 
-BCubed_metric(sr, km$cluster, 0.5)
+# Function to calculate BCubed precision and recall
+calculate_bcubed_metrics <- function(datacluster) {
+  n <- nrow(datacluster)
+  precision_sum <- 0
+  recall_sum <- 0
+  
+  for (i in 1:n) {
+    cluster <- datacluster$cluster[i]
+    label <- datacluster$label[i]
+    
+    # Count the number of items from the same category within the same cluster
+same_category_same_cluster <- sum(datacluster$label[datacluster$cluster == cluster] == label)
+    
+# Count the total number of items in the same cluster
+total_same_cluster <- sum(datacluster$cluster == cluster)
+    
+# Count the total number of items with the same category
+total_same_category <- sum(datacluster$label == label)
+    
+# Calculate precision and recall for the current item and add them to the sums
+precision_sum <- precision_sum + same_category_same_cluster /total_same_cluster
+recall_sum <- recall_sum + same_category_same_cluster / total_same_category
+  }
+
+  # Calculate average precision and recall
+  precision <- precision_sum / n
+  recall <- recall_sum / n
+
+  return(list(precision = precision, recall = recall))
+}
+
+# Calculate BCubed precision and recall
+metrics <- calculate_bcubed_metrics(datacluster)
+
+# Extract precision and recall from the metrics
+precision <- metrics$precision
+recall <- metrics$recall
+
+# Print the results
+cat("BCubed Precision:", precision, "\n")
+cat("BCubed Recall:", recall, "\n")
 ```
 
-The Average BCubed precision and recall value of 0.5218951 provides an evaluation of the clustering method's agreement with the reference class label "stroke". While a higher BCubed goodness value is generally desirable.
+The BCubed precision (0.5693427) and recall (0.4817475) provides an evaluation of the clustering method's agreement with the reference class label "stroke". While a higher BCubed goodness value is generally desirable, the values are less than the 2 clusters.
 
 ## - 5 Clusters:
 
-```{r}
+```{r, cache=TRUE}
 #######cluster k=5
 #calculate k-mean
 km <- kmeans(data_cluster, 5, iter.max = 140 , algorithm="Lloyd", nstart=100)
-km
 
 
 #plot k-mean
@@ -1032,7 +1128,7 @@ The closeness between two clusters can occur due to several reasons. It is possi
 
 ### **Average silhouette:**
 
-```{r}
+```{r, cache=TRUE}
 #avg silhouette
 library(cluster)
 sil <- silhouette(km$cluster, dist(data_cluster))
@@ -1045,26 +1141,64 @@ The observed value of 0.59 indicates a slightly lower level of discrimination an
 
 ### **Total within-cluster sum of square:**
 
-```{r}
+```{r, cache=TRUE}
 # Total sum of squares
 km$tot.withinss
 ```
 
 The lower WSS value compared to the 3-mean clustering solution (1232.939) suggests that the clusters in the 5-mean solution are more compact, indicating that the data points within each cluster are more tightly grouped around their centroids. This can be seen as a positive outcome, indicating improved clustering results in terms of compactness.
 
-### Average BCubed precision and recall
+### BCubed precision and recall
 
-```{r}
-#bcubed metrix that take the avg of precision&recall
-#install.packages('DPBBM')
-library('DPBBM')
-c = km$cluster
-sr <- as.integer(sr)
+```{r, cache=TRUE}
+cluster_assignments <- c(km$cluster)
+ground_truth_labels <- c(data$stroke)
+datacluster <- data.frame(cluster = cluster_assignments, label = ground_truth_labels)
 
-BCubed_metric(sr, km$cluster, 0.5)
+# Function to calculate BCubed precision and recall
+calculate_bcubed_metrics <- function(datacluster) {
+  n <- nrow(datacluster)
+  precision_sum <- 0
+  recall_sum <- 0
+  
+  for (i in 1:n) {
+    cluster <- datacluster$cluster[i]
+    label <- datacluster$label[i]
+    
+    # Count the number of items from the same category within the same cluster
+same_category_same_cluster <- sum(datacluster$label[datacluster$cluster == cluster] == label)
+    
+# Count the total number of items in the same cluster
+total_same_cluster <- sum(datacluster$cluster == cluster)
+    
+# Count the total number of items with the same category
+total_same_category <- sum(datacluster$label == label)
+    
+# Calculate precision and recall for the current item and add them to the sums
+precision_sum <- precision_sum + same_category_same_cluster /total_same_cluster
+recall_sum <- recall_sum + same_category_same_cluster / total_same_category
+  }
+
+  # Calculate average precision and recall
+  precision <- precision_sum / n
+  recall <- recall_sum / n
+
+  return(list(precision = precision, recall = recall))
+}
+
+# Calculate BCubed precision and recall
+metrics <- calculate_bcubed_metrics(datacluster)
+
+# Extract precision and recall from the metrics
+precision <- metrics$precision
+recall <- metrics$recall
+
+# Print the results
+cat("BCubed Precision:", precision, "\n")
+cat("BCubed Recall:", recall, "\n")
 ```
 
-the obtained BCubed value of 0.4242592 suggests that there is scope for improvement in terms of the clustering method's agreement with the reference labels. This indicates that the clustering algorithm may not accurately capture the underlying number of clusters k.
+the obtained BCubed precision (0.5866183) and recall (0.3322907) suggests that there is scope for improvement in terms of the clustering method's agreement with the reference labels. This indicates that the clustering algorithm may not accurately capture the underlying number of clusters k.
 
 ### - Optimal number of clusters:
 
@@ -1074,23 +1208,21 @@ The elbow method and average silhouette method are used to find the optimal numb
 
 Elbow method with the Within-Cluster Sum of Squares (WSS) to find the optimal number of clusters in a k-means clustering algorithm.
 
-```{r}
+```{r, cache=TRUE}
 #elbow with wss
-fviz_nbclust(data, kmeans, method = "wss")+ labs(subtitle = "Elbow method")
+fviz_nbclust(data_cluster, kmeans, method = "wss")+ labs(subtitle = "Elbow method")
 ```
 
 #### **Average silhouette method:**
 
 The silhouette method helps understand the quality of clustering by measuring how similar an object is to its own cluster (cohesion) compared to other clusters (separation). The optimal number of clusters is often associated with a high average silhouette score.
 
-```{r}
+```{r, cache=TRUE}
 ########### avg  silhouette for all cluster
-fviz_nbclust(data, kmeans, method = "silhouette")
+fviz_nbclust(data_cluster, kmeans, method = "silhouette")
 ```
 
 The average silhouette approach determines how well each object lies within its cluster. A high average silhouette width (k=3) indicates a good clustering.
-
-\*\*Although BCubed_metric() gives average values of recall and precision, we decided to choose to use this method because it works with our dataset and gives results that we can infer about the validity of the clustering.
 
 ## Findings:
 
@@ -1104,23 +1236,51 @@ Based on our observations from the plots and utilizing other relevant commands, 
 
 Through these efforts, we strived to create an efficient and reliable predictive model that could effectively assist individuals in taking proactive measures to lead healthier lives.
 
-Following the preprocessing stage, we proceeded to apply various methods, including the Gini index, gain ratio, and information gain, using different partitioning techniques. We carefully evaluated the outcomes of each method to determine the most suitable approach for our specific dataset ,then finally group it in the table below.
+Following the preprocessing stage, we proceeded to apply various methods, including the Gini index, gain ratio, and information gain, using different partitioning techniques. We carefully evaluated the outcomes of each method to determine the most suitable approach for our specific dataset . The results can be viewed in the tables below.
 
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
-|             | 70% training set 30% testing set: | 80% training set 20% testing set: | 85% training set 15% testing set: |
-+=============+===================================+===================================+===================================+
-| IG          | IG RATIO                          | IG index                          | IG                                |
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
-| Accuracy    | 0.7748                            | 0.8079                            | 0.7748                            |
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
-| Precision   | 0.7067                            | 0.7667                            | 0.7067                            |
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
-| Sensitivity | 0.9545                            | 0.8961                            | 0.9545                            |
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
-| Specificity | 0.5878                            | 0.7162                            | 0.5878                            |
-+-------------+-----------------------------------+-----------------------------------+-----------------------------------+
+####GAIN RATIO:
 
-After thorough analysis, we determined that the gain ratio method with (85% training set and 15% testing set) yielded the most accurate and reliable results for our dataset. Therefore, we confidently selected it as the optimal method for constructing a decision tree.
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.7967                             | 0.795                              | 0.78                               |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.7432                             | 0.7323                             | 0.7442                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.9067                             | 0.9300                             | 0.8533                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.6867                             | 0.6600                             | 0.7067                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+####GINI INDEX:
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.74                               | 0.78                               | 0.74                               |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.6875                             | 0.7414                             | 0.7045                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.8800                             | 0.8600                             | 0.8267                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.6000                             | 0.7000                             | 0.6533                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+####INFORMATION GAIN:
+
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+|                 | 70 % training set 30% testing set: | 80 % training set 20% testing set: | 85 % training set 15% testing set: |
++=================+====================================+====================================+====================================+
+| **Accuracy**    | 0.7433                             | 0.76                               | 0.7067                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Precision**   | 0.6780                             | 0.6970                             | 0.6505                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Sensitivity** | 0.9267                             | 0.9200                             | 0.8933                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+| **Specificity** | 0.5600                             | 0.6000                             | 0.5200                             |
++-----------------+------------------------------------+------------------------------------+------------------------------------+
+
+After thorough analysis, we determined that the gain ratio method with (70% training set and 30% testing set) yielded the most accurate and reliable results for our dataset. Therefore, we confidently selected it as the optimal method for constructing a decision tree.
 
 As discussed, Gain ratio is considered superior to information gain in certain scenarios as it addresses the potential bias introduced by attributes with high cardinality or numerous distinct values. Information gain measures the reduction in uncertainty achieved by splitting data based on an attribute, but it tends to favor attributes with more distinct values or partitions, which can introduce more information.This partition generally performed best throughout all the methods due to the fact that the model would have more data to train on, thus being more accurate.
 
@@ -1128,25 +1288,24 @@ In contrast, the gain ratio normalizes the information gain by considering the i
 
 The decision tree model yielded the following metrics:
 
--   Accuracy: The accuracy of the model is 84.28%.
+-   Accuracy: The accuracy of the model is 79.67%.
 
--   Precision: The precision of the model is 79.25%.
+-   Precision: The precision of the model is 74.32%.
 
--   Sensitivity: The sensitivity (or recall) of the model is 96.55%.
+-   Sensitivity: The sensitivity (or recall) of the model is 90.67%.
 
--   Specificity: The specificity of the model is 69.44%.
+-   Specificity: The specificity of the model is 68.67%.
 
 From the analysis of the decision tree, several findings can be observed:
 
--   Number of Leaf Nodes: The decision tree consists of 10 leaf nodes, indicating that 10 rules or distinct conditions have been extracted from the tree.
+-   Number of Leaf Nodes: The decision tree consists of 9 leaf nodes, indicating that 9 rules or distinct conditions have been extracted from the tree.
 
--   Important Attributes: The decision nodes in the tree utilize the attributes of age, average glucose, and hypertension to make decisions and classify instances.
+-   Important Attributes: The decision nodes in the tree utilize the attributes of age, ever married, and hypertension to make decisions and classify instances.
 
 -   Age and Stroke: The analysis reveals that older individuals are more likely to have a stroke. This suggests that age is an important factor in determining the risk of stroke.
 
 -   Hypertension and Stroke: The tree also indicates that individuals with higher levels of hypertension are more prone to suffering from a stroke. This implies that hypertension is a significant contributing factor to stroke risk.
 
--   Combined Impact: Furthermore, the findings suggest that individuals who have both hypertension and higher average glucose levels may be particularly susceptible to experiencing a stroke.
 
 These insights provide valuable information about the relationships between specific attributes and the occurrence of strokes. They can be utilized to raise awareness, inform preventive measures, and guide healthcare interventions for individuals at higher risk of stroke.
 
@@ -1156,19 +1315,19 @@ For Clustering, we used K-means algorithm with 3 different K to find the optimal
 
 results:
 
-+-----------------------------------------------+----------------+----------------+-----------------+
-|                                               | **K-means**    |                |                 |
-+-----------------------------------------------+----------------+----------------+-----------------+
-| **Number of clusters**                        | **K=2**        | **K=3**        | **K=5**         |
-+-----------------------------------------------+----------------+----------------+-----------------+
-| **Average silhouette width for each cluster** | 0.53           | 0.63           | 0.59            |
-+-----------------------------------------------+----------------+----------------+-----------------+
-| **total within-cluster sum of square**        | 2500.985       | 1232.939       | 670.6099        |
-+-----------------------------------------------+----------------+----------------+-----------------+
-| **Average BCubed precision and recall**       | 0.5982604      | 0.5218951      | 0.4242592       |
-+-----------------------------------------------+----------------+----------------+-----------------+
-| **Visualization**                             | ***Figure 1*** | ***Figure 6*** | ***Figure 10*** |
-+-----------------------------------------------+----------------+----------------+-----------------+
++-----------------------------------------------+-------------+-----------+-----------+
+|                                               | **K-means** |           |           |
++-----------------------------------------------+-------------+-----------+-----------+
+| **Number of clusters**                        | **K=2**     | **K=3**   | **K=5**   |
++-----------------------------------------------+-------------+-----------+-----------+
+| **Average silhouette width for each cluster** | 0.53        | 0.63      | 0.59      |
++-----------------------------------------------+-------------+-----------+-----------+
+| **total within-cluster sum of square**        | 2500.985    | 1232.939  | 670.6099  |
++-----------------------------------------------+-------------+-----------+-----------+
+| **BCubed precision**                          | 0.5404063   | 0.5693427 | 0.5866183 |
++-----------------------------------------------+-------------+-----------+-----------+
+| **BCubed recall**                             | 0.669987    | 0.4817475 | 0.3322907 |
++-----------------------------------------------+-------------+-----------+-----------+
 
 • Number of cluster(K)= 2, the average silhouette width=0.53
 
@@ -1185,6 +1344,8 @@ However, when evaluating the clustering results using metrics such as silhouette
 While the 3-mean clustering solution visually appears superior, it is crucial to prioritize the alignment with the class labels and the nature of the problem at hand. Therefore, based on the stroke classification problem and the binary class labels, the 2-mean clustering solution is deemed better in this scenario.
 
 It is worth noting that the clustering algorithm's ability to identify three clusters might be influenced by other factors present in the dataset that are not explicitly captured by the class labels. These factors could introduce additional complexity and patterns that the clustering algorithm attempts to capture by suggesting three clusters. However, for the specific problem of stroke prediction, our numbers choose 30-mean clustering but the binary nature of the class labels suggests that a 2-mean clustering solution is more appropriate and aligned with the desired outcome.
+
+Classification or Clustering?
 
 In conclusion, classification and clustering methods both serve an important part in machine learning. When considering our problem and dataset, it is recommended to utilize classification over clustering. This is due to the fact that classification is more suitable for predicting whether an individual will experience a stroke or not, which is our goal. Clustering can teach us more about our data and how the patients can be grouped based on common features, and by evaluating it to our ground truth (suffered a stroke or not) it can point out common attributes for each group, but it cannot predict whether an individual may suffer a stroke or not.
 
